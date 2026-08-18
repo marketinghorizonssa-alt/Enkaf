@@ -4,7 +4,7 @@
 - Client: ENKAF / إنكاف
 - Brand: إنكاف للمحاماة والاستشارات القانونية
 - Reference URL: https://enkaf.sa/
-- Intended production domain: https://enkaf.sa/ (production deployment not executed yet)
+- Intended production domain: https://enkaf.sa/
 - Primary email: Info@enkaf.sa
 - Work email: Work@enkaf.sa
 - Approved phone supplied by client: 0559556606 / +966559556606
@@ -57,15 +57,32 @@ Automatic attribution:
 - Reviewed branch head before merge: f0d4b702454093c8e520ed61cd6fba3a66d753f8
 - Pull request: #1 ENKAF launch v1 — website and Google Ads landing pages
 - PR merged to main on 2026-08-18.
-- Merge commit: 9564d10852efaedaa248f21788fcd75c3dd4e55a
+- Reviewed website release commit: 9564d10852efaedaa248f21788fcd75c3dd4e55a
 - Deployment/rollback script: scripts/deploy-hostinger.sh
+- Deployment reliability PRs: #2 backup-race fix; #3 server-local health verification for broken self-DNS.
+- Deployment tooling commit used for final run: b0fbbce4962de57c85968749fbe926a8c79ab7fe
 - Local site validation before publication: ENKAF_LOCAL_VALIDATE_OK
 
 ## Release state
 - Source publication to GitHub: complete.
-- Production Hostinger deployment: blocked because the Hostinger connector returned `Not connected` on the latest verified read after GitHub merge.
-- No direct archive bypass was used.
-- No Cloudflare account-management deploy connector is currently available; the connected Cloudflare tool is documentation-only.
-- Review mode defaults to true.
+- Hostinger target: username u128565677, domain enkaf.sa, root /home/u128565677/domains/enkaf.sa/public_html.
+- Reviewed release deployed on Hostinger: 9564d10852efaedaa248f21788fcd75c3dd4e55a.
+- Runtime read-back: health JSON returned ok=true, service=enkaf-landing-site, build=enkaf-2026-08-18-a, review_mode=false, gtm_configured=false.
+- Latest verified pre-deploy backup: before-9564d10852ef-20260818-190802.tar.gz.
+- Temporary deployment and verification cron jobs were deleted; verified cron list is empty.
+- Hostinger server-side cache purge was requested after deployment.
+- No direct local-archive bypass was used; deployment downloaded the recorded GitHub release.
+
+## Current DNS blocker
+- Public DNS is not currently suitable for live QA/indexing.
+- DNS-over-HTTPS verification on 2026-08-18 returned NOERROR but no A answer for enkaf.sa.
+- DNS-over-HTTPS verification returned NOERROR but no AAAA answer for enkaf.sa.
+- www.enkaf.sa A lookup returned NXDOMAIN.
+- Authority observed in the DNS responses: ns10.dnetns.com / dnet.sa SOA.
+- Hostinger domain-ownership verification currently returns is_accessible=false.
+- Because the public hostname is not resolving consistently, external live HTTP, robots, sitemap, form, mobile, and Search Console QA remain blocked even though the production files and PHP runtime are deployed on Hostinger.
+
+## Crawl / release rules
+- Review mode defaults to true in source but production deployment sets ENKAF_REVIEW_MODE=false.
 - Review mode returns X-Robots-Tag noindex,nofollow and robots Disallow: /.
-- Production release must set ENKAF_REVIEW_MODE=false and pass live health, release-marker, robots, sitemap, form, and mobile checks before Search Console indexing actions.
+- Do not submit Search Console or create/promote conversion tracking until public DNS resolves and live health, release marker, robots, sitemap, form, and mobile checks pass.
