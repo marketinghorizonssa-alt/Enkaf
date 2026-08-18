@@ -14,6 +14,7 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 WORK="${DOMAIN_ROOT}/.enkaf-deploy-${STAMP}"
 ARCHIVE="${WORK}/source.tar.gz"
 BACKUP="${BACKUP_ROOT}/before-${COMMIT:0:12}-${STAMP}.tar.gz"
+LOCK="${DOMAIN_ROOT}/.enkaf-deploy.lock"
 HAD_PUBLIC=0
 HAD_APP=0
 
@@ -28,6 +29,17 @@ fi
 
 mkdir -p "$WORK" "$BACKUP_ROOT" "$PRIVATE_ROOT"
 chmod 700 "$PRIVATE_ROOT" || true
+
+exec 9>"$LOCK"
+if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
+  echo "ENKAF_DEPLOY_SKIP locked"
+  exit 0
+fi
+
+if [ -f "$DOMAIN_ROOT/.enkaf-release" ] && [ "$(tr -d '\r\n' < "$DOMAIN_ROOT/.enkaf-release")" = "$COMMIT" ]; then
+  echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT}"
+  exit 0
+fi
 
 cleanup() {
   rm -rf "$WORK"
@@ -62,8 +74,14 @@ if [ "$HAD_PUBLIC" -eq 1 ] || [ "$HAD_APP" -eq 1 ]; then
   ITEMS=""
   [ "$HAD_PUBLIC" -eq 1 ] && ITEMS="public_html"
   [ "$HAD_APP" -eq 1 ] && ITEMS="${ITEMS} app"
+  # The legacy site can mutate cache/upload files while the archive is being created.
+  # Keep the backup usable without treating benign file-changed warnings as a deploy failure.
   # shellcheck disable=SC2086
-  tar -czf "$BACKUP" -C "$DOMAIN_ROOT" $ITEMS
+  tar --warning=no-file-changed --ignore-failed-read -czf "$BACKUP" -C "$DOMAIN_ROOT" $ITEMS
+  if [ ! -s "$BACKUP" ]; then
+    echo "ENKAF_DEPLOY_ERROR backup_missing"
+    exit 3
+  fi
 fi
 
 rollback() {
