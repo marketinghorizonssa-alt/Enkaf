@@ -8,7 +8,24 @@ SOURCE_TAR="${1:-${BACKUP_ROOT}/before-9564d10852ef-20260818-190802.tar.gz}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 WORK="${DOMAIN_ROOT}/.legacy-archive-${STAMP}"
 ZIP="${LEGACY_ROOT}/enkaf-wordpress-legacy-${STAMP}.zip"
+LOCK="${LEGACY_ROOT}/.archive.lock"
+DONE="${LEGACY_ROOT}/.archive-complete"
 DB_STATUS="not-found"
+
+mkdir -p "$LEGACY_ROOT"
+chmod 700 "$LEGACY_ROOT" || true
+exec 9>"$LOCK"
+if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
+  echo "ENKAF_LEGACY_ARCHIVE_SKIP locked"
+  exit 0
+fi
+if [ -f "$DONE" ]; then
+  PREVIOUS="$(cat "$DONE" 2>/dev/null || true)"
+  if [ -n "$PREVIOUS" ] && [ -s "$PREVIOUS" ]; then
+    echo "ENKAF_LEGACY_ARCHIVE_ALREADY_OK path=$PREVIOUS"
+    exit 0
+  fi
+fi
 
 if [ ! -f "$SOURCE_TAR" ]; then
   echo "ENKAF_LEGACY_ARCHIVE_ERROR source_backup_missing"
@@ -19,8 +36,7 @@ if ! command -v zip >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1; then
   exit 2
 fi
 
-mkdir -p "$LEGACY_ROOT" "$WORK"
-chmod 700 "$LEGACY_ROOT" || true
+mkdir -p "$WORK"
 trap 'rm -rf "$WORK"' EXIT
 
 tar -xzf "$SOURCE_TAR" -C "$WORK"
@@ -65,6 +81,7 @@ if [ ! -s "$ZIP" ]; then
   exit 3
 fi
 
+printf '%s\n' "$ZIP" > "$DONE"
 SIZE="$(du -h "$ZIP" | awk '{print $1}')"
 HASH="$(sha256sum "$ZIP" | awk '{print $1}')"
 echo "ENKAF_LEGACY_ARCHIVE_OK path=$ZIP size=$SIZE db_dump=$DB_STATUS sha256=$HASH"
