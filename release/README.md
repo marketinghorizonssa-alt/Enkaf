@@ -1,1 +1,0 @@
-Release branch assets are being finalized and will be verified before deployment.
