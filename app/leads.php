@@ -152,96 +152,79 @@ function handle_lead_submission(): never {
         $nowIso = gmdate('c');
         $cfg = site_config();
         $landingPath = payload_value($payload, 'landing_path', 300) ?: '/';
+        $landingUrl = payload_value($payload, 'landing_url', 1000) ?: absolute_url($landingPath);
+        $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
         $lead = [
             'lead_id' => generate_lead_id(),
             'created_at' => $nowIso,
             'full_name' => $name,
             'phone_e164' => $phone,
-            'phone_raw' => payload_value($payload, 'phone', 40),
             'service_key' => $serviceKey,
             'service_label' => $services[$serviceKey],
-            'landing_page_id' => payload_value($payload, 'landing_page_id', 50),
+            'landing_page_id' => payload_value($payload, 'landing_page_id', 40),
             'landing_path' => $landingPath,
-            'landing_url' => payload_value($payload, 'landing_url', 1200),
+            'landing_url' => $landingUrl,
             'utm_source' => payload_value($payload, 'utm_source', 300),
             'utm_medium' => payload_value($payload, 'utm_medium', 300),
             'utm_campaign' => payload_value($payload, 'utm_campaign', 300),
-            'utm_term' => payload_value($payload, 'utm_term', 500),
-            'utm_content' => payload_value($payload, 'utm_content', 500),
-            'gclid' => payload_value($payload, 'gclid', 500),
-            'gbraid' => payload_value($payload, 'gbraid', 500),
-            'wbraid' => payload_value($payload, 'wbraid', 500),
-            'ttclid' => payload_value($payload, 'ttclid', 500),
-            'fbclid' => payload_value($payload, 'fbclid', 500),
+            'utm_term' => payload_value($payload, 'utm_term', 300),
+            'utm_content' => payload_value($payload, 'utm_content', 300),
+            'gclid' => payload_value($payload, 'gclid', 300),
+            'gbraid' => payload_value($payload, 'gbraid', 300),
+            'wbraid' => payload_value($payload, 'wbraid', 300),
+            'ttclid' => payload_value($payload, 'ttclid', 300),
+            'fbclid' => payload_value($payload, 'fbclid', 300),
             'referrer' => payload_value($payload, 'referrer', 1000),
-            'first_landing_url' => payload_value($payload, 'first_landing_url', 1200),
-            'session_id' => payload_value($payload, 'session_id', 150),
+            'first_landing_url' => payload_value($payload, 'first_landing_url', 1000),
+            'session_id' => payload_value($payload, 'session_id', 120),
             'consent' => true,
             'consent_version' => PRIVACY_VERSION,
             'consent_at' => $nowIso,
             'server_submit_at' => $nowIso,
-            'source' => 'website',
-            'user_agent' => substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 800),
-            'ip_hash' => hash('sha256', (string)($_SERVER['REMOTE_ADDR'] ?? '') . '|' . date('Y-m')),
+            'ip_hash' => $ip === '' ? '' : hash('sha256', $ip . '|' . PRIVACY_VERSION),
+            'user_agent' => u_substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 800),
         ];
         $lead = append_lead($lead);
-        $ref = rawurlencode((string)$lead['lead_id']);
         json_response([
             'ok' => true,
             'lead_id' => $lead['lead_id'],
-            'duplicate' => (bool)$lead['duplicate_flag'],
-            'thank_you_url' => '/شكرا/?ref=' . $ref,
-        ]);
+            'duplicate_flag' => (bool)$lead['duplicate_flag'],
+            'thank_you_url' => '/شكرا/?ref=' . rawurlencode($lead['lead_id']),
+        ], 201);
     } catch (Throwable $e) {
-        error_log('[ENKAF lead] ' . $e->getMessage());
-        json_response(['ok' => false, 'error' => 'server_error', 'message' => 'تعذر حفظ الطلب الآن. حاول مرة أخرى أو تواصل معنا مباشرة.'], 500);
+        error_log('ENKAF lead storage error: ' . $e->getMessage());
+        json_response(['ok' => false, 'error' => 'storage_error', 'message' => 'تعذر حفظ الطلب الآن. يمكنك التواصل معنا مباشرة عبر الاتصال أو واتساب.'], 503);
     }
-}
-
-function csv_escape($value): string {
-    $stream = fopen('php://temp', 'r+');
-    if ($stream === false) return '""';
-    fputcsv($stream, [(string)$value]);
-    rewind($stream);
-    $out = trim((string)stream_get_contents($stream));
-    fclose($stream);
-    return $out;
 }
 
 function handle_lead_feed(): never {
     $cfg = site_config();
     $token = (string)($_GET['token'] ?? '');
-    $expected = (string)$cfg['feed_token'];
-    if ($expected === '' || !hash_equals($expected, $token)) {
+    if ($cfg['feed_token'] === '' || !hash_equals($cfg['feed_token'], $token)) {
         http_response_code(404);
         exit;
     }
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Cache-Control: no-store');
-    header('X-Content-Type-Options: nosniff');
-    $out = fopen('php://output', 'w');
-    if ($out === false) exit;
-    fwrite($out, "\xEF\xBB\xBF");
-    $headers = ['lead_id','created_at','full_name','phone_e164','phone_raw','service_key','service_label','landing_page_id','landing_path','landing_url','source','utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','gbraid','wbraid','ttclid','fbclid','referrer','first_landing_url','session_id','consent','consent_version','consent_at','server_submit_at','duplicate_flag'];
-    fputcsv($out, $headers);
     $path = private_data_dir() . '/enkaf-leads.ndjson';
-    if (is_file($path) && ($fp = fopen($path, 'r')) !== false) {
-        if (flock($fp, LOCK_SH)) {
-            while (($line = fgets($fp)) !== false) {
-                $r = json_decode(trim($line), true);
-                if (!is_array($r)) continue;
-                fputcsv($out, [
-                    $r['lead_id'] ?? '',$r['created_at'] ?? '',$r['full_name'] ?? '',$r['phone_e164'] ?? '',$r['phone_raw'] ?? '',
-                    $r['service_key'] ?? '',$r['service_label'] ?? '',$r['landing_page_id'] ?? '',$r['landing_path'] ?? '',$r['landing_url'] ?? '',
-                    $r['source'] ?? '',$r['utm_source'] ?? '',$r['utm_medium'] ?? '',$r['utm_campaign'] ?? '',
-                    $r['utm_term'] ?? '',$r['utm_content'] ?? '',$r['gclid'] ?? '',$r['gbraid'] ?? '',$r['wbraid'] ?? '',$r['ttclid'] ?? '',
-                    $r['fbclid'] ?? '',$r['referrer'] ?? '',$r['first_landing_url'] ?? '',$r['session_id'] ?? '',!empty($r['consent']) ? 'TRUE' : 'FALSE',
-                    $r['consent_version'] ?? '',$r['consent_at'] ?? '',$r['server_submit_at'] ?? '',!empty($r['duplicate_flag']) ? 'TRUE' : 'FALSE'
-                ]);
-            }
-            flock($fp, LOCK_UN);
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: inline; filename="enkaf-leads.csv"');
+    header('Cache-Control: no-store, private');
+    $out = fopen('php://output', 'wb');
+    fwrite($out, "\xEF\xBB\xBF");
+    $headers = ['Lead ID','Created At','Name','Phone','Service','Landing Page ID','Landing Path','UTM Source','UTM Medium','UTM Campaign','UTM Term','UTM Content','GCLID','GBRAID','WBRAID','TTCLID','FBCLID','Referrer','First Landing URL','Session ID','Consent','Consent Version','Consent At','Server Submit At','Duplicate Flag'];
+    fputcsv($out, $headers);
+    if (is_file($path)) {
+        $rows = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+        foreach (array_reverse($rows) as $line) {
+            $r = json_decode($line, true);
+            if (!is_array($r)) continue;
+            fputcsv($out, [
+                $r['lead_id'] ?? '',$r['created_at'] ?? '',$r['full_name'] ?? '',$r['phone_e164'] ?? '',$r['service_label'] ?? '',
+                $r['landing_page_id'] ?? '',$r['landing_path'] ?? '',$r['utm_source'] ?? '',$r['utm_medium'] ?? '',$r['utm_campaign'] ?? '',
+                $r['utm_term'] ?? '',$r['utm_content'] ?? '',$r['gclid'] ?? '',$r['gbraid'] ?? '',$r['wbraid'] ?? '',$r['ttclid'] ?? '',
+                $r['fbclid'] ?? '',$r['referrer'] ?? '',$r['first_landing_url'] ?? '',$r['session_id'] ?? '',!empty($r['consent']) ? 'TRUE' : 'FALSE',
+                $r['consent_version'] ?? '',$r['consent_at'] ?? '',$r['server_submit_at'] ?? '',!empty($r['duplicate_flag']) ? 'TRUE' : 'FALSE'
+            ]);
         }
-        fclose($fp);
     }
     fclose($out);
     exit;
