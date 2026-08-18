@@ -4,7 +4,7 @@
 - Client: ENKAF / إنكاف
 - Brand: إنكاف للمحاماة والاستشارات القانونية
 - Reference URL: https://enkaf.sa/
-- Intended production domain: https://enkaf.sa/ (deployment not executed yet)
+- Intended production domain: https://enkaf.sa/ (production deployment not executed yet)
 - Primary email: Info@enkaf.sa
 - Work email: Work@enkaf.sa
 - Approved phone supplied by client: 0559556606 / +966559556606
@@ -51,7 +51,21 @@ Automatic attribution:
 - Campaign: not created yet
 - Launch state: not approved; all future campaign objects must remain paused until explicit final approval.
 
+## GitHub publication
+- Dedicated repository: marketinghorizonssa-alt/Enkaf
+- Review branch: review/enkaf-launch-v1
+- Reviewed branch head before merge: f0d4b702454093c8e520ed61cd6fba3a66d753f8
+- Pull request: #1 ENKAF launch v1 — website and Google Ads landing pages
+- PR merged to main on 2026-08-18.
+- Merge commit: 9564d10852efaedaa248f21788fcd75c3dd4e55a
+- Deployment/rollback script: scripts/deploy-hostinger.sh
+- Local site validation before publication: ENKAF_LOCAL_VALIDATE_OK
+
 ## Release state
+- Source publication to GitHub: complete.
+- Production Hostinger deployment: blocked because the Hostinger connector returned `Not connected` on the latest verified read after GitHub merge.
+- No direct archive bypass was used.
+- No Cloudflare account-management deploy connector is currently available; the connected Cloudflare tool is documentation-only.
 - Review mode defaults to true.
 - Review mode returns X-Robots-Tag noindex,nofollow and robots Disallow: /.
-- Production release must set ENKAF_REVIEW_MODE=false and pass robots/sitemap live checks before Search Console indexing actions.
+- Production release must set ENKAF_REVIEW_MODE=false and pass live health, release-marker, robots, sitemap, form, and mobile checks before Search Console indexing actions.
