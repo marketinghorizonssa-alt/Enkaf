@@ -61,6 +61,7 @@ Automatic attribution:
 - Deployment/rollback script: scripts/deploy-hostinger.sh
 - Deployment reliability PRs: #2 backup-race fix; #3 server-local health verification for broken self-DNS.
 - Deployment tooling commit used for final run: b0fbbce4962de57c85968749fbe926a8c79ab7fe
+- Legacy archive helper commit: f43c2dbf796c0eac56d573db92c2df7222bccd34
 - Local site validation before publication: ENKAF_LOCAL_VALIDATE_OK
 
 ## Release state
@@ -68,10 +69,22 @@ Automatic attribution:
 - Hostinger target: username u128565677, domain enkaf.sa, root /home/u128565677/domains/enkaf.sa/public_html.
 - Reviewed release deployed on Hostinger: 9564d10852efaedaa248f21788fcd75c3dd4e55a.
 - Runtime read-back: health JSON returned ok=true, service=enkaf-landing-site, build=enkaf-2026-08-18-a, review_mode=false, gtm_configured=false.
-- Latest verified pre-deploy backup: before-9564d10852ef-20260818-190802.tar.gz.
-- Temporary deployment and verification cron jobs were deleted; verified cron list is empty.
+- Current public root contains only the ENKAF release files: assets, .enkaf-release, enkaf-release.txt, .htaccess, and index.php.
+- No wp-admin, wp-content, wp-includes, or wp-config.php remains in the serving root.
 - Hostinger server-side cache purge was requested after deployment.
 - No direct local-archive bypass was used; deployment downloaded the recorded GitHub release.
+
+## Legacy WordPress disposition
+- User explicitly authorized treating the old WordPress site as disposable legacy material and continuing as if the domain were empty.
+- Legacy WordPress is archival only and must not be used as production source, design source, or deployment source.
+- Full preservation ZIP: /home/u128565677/legacy-archives/enkaf/enkaf-wordpress-legacy-20260818-192401.zip
+- Archive size: 688M.
+- Archive SHA-256: 1875f740a7fa9c09ddd97202cd83853ecf9ebc0dd6509d6fdd4e3c59a8c3b5a7.
+- WordPress database dump is included inside the ZIP.
+- ZIP integrity was independently rechecked with unzip -tq and returned ZIP_TEST_OK.
+- Seven redundant pre-release tar backups were moved out of the domain backup directory and then deleted after ZIP verification.
+- /home/u128565677/domains/enkaf.sa/enkaf-backups now contains zero files, so future backups start from the ENKAF release only.
+- No destructive database deletion was performed; the old database is not used by the ENKAF application.
 
 ## Current DNS blocker
 - Public DNS is not currently suitable for live QA/indexing.
