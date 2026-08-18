@@ -60,7 +60,8 @@ Automatic attribution:
 - Reviewed website release commit: 9564d10852efaedaa248f21788fcd75c3dd4e55a
 - Deployment/rollback script: scripts/deploy-hostinger.sh
 - Deployment reliability PRs: #2 backup-race fix; #3 server-local health verification for broken self-DNS.
-- Deployment tooling commit used for final run: b0fbbce4962de57c85968749fbe926a8c79ab7fe
+- Server-runtime QA tooling: PR #4 QA harness; PR #5 Arabic URL encoding fix; PR #6 robust title parser.
+- Latest QA tooling merge commit: 94383eb4a064764b921253c269540e83a5e2bd1d.
 - Legacy archive helper commit: f43c2dbf796c0eac56d573db92c2df7222bccd34
 - Local site validation before publication: ENKAF_LOCAL_VALIDATE_OK
 
@@ -73,6 +74,20 @@ Automatic attribution:
 - No wp-admin, wp-content, wp-includes, or wp-config.php remains in the serving root.
 - Hostinger server-side cache purge was requested after deployment.
 - No direct local-archive bypass was used; deployment downloaded the recorded GitHub release.
+
+## Hostinger server-runtime QA
+- A temporary HTTP QA server was started against the actual deployed public_html and app files with ENKAF_SITE_URL=https://enkaf.sa and ENKAF_REVIEW_MODE=false.
+- The test data directory was isolated from production lead storage and deleted by cleanup; no QA lead was left in production storage.
+- Final result: ENKAF_SERVER_QA_OK pages=6 sitemap_urls=7 form_201=true form_422=true robots_allowed=true private_feed_404=true.
+- Verified six marketing routes return 200 in the runtime harness, each has one H1, a canonical, the approved four visible form fields, call CTA, WhatsApp CTA, and no production X-Robots-Tag noindex header.
+- Verified the six marketing page titles are present and unique.
+- Verified privacy 200, thank-you 200 with opaque lead reference only, and a missing route returns a real 404.
+- Verified /api/leads.csv/ returns 404 without the private token.
+- Verified production robots output includes Google-InspectionTool and Googlebot groups, has no Disallow: /, and declares https://enkaf.sa/sitemap.xml.
+- Verified sitemap response is XML and contains exactly seven https://enkaf.sa canonical URLs.
+- Verified invalid lead POST returns 422 validation_error.
+- Verified a valid lead POST returns 201 with ok=true and an ENK-* lead reference, and a durable NDJSON row is written before success in the isolated QA data directory.
+- Temporary QA/download commands and the downloaded QA shell file were removed after the test. Latest verified Hostinger cron list is empty.
 
 ## Legacy WordPress disposition
 - User explicitly authorized treating the old WordPress site as disposable legacy material and continuing as if the domain were empty.
@@ -87,15 +102,16 @@ Automatic attribution:
 - No destructive database deletion was performed; the old database is not used by the ENKAF application.
 
 ## Current DNS blocker
-- Public DNS is not currently suitable for live QA/indexing.
+- Public DNS is not currently suitable for external live QA/indexing.
 - DNS-over-HTTPS verification on 2026-08-18 returned NOERROR but no A answer for enkaf.sa.
 - DNS-over-HTTPS verification returned NOERROR but no AAAA answer for enkaf.sa.
 - www.enkaf.sa A lookup returned NXDOMAIN.
 - Authority observed in the DNS responses: ns10.dnetns.com / dnet.sa SOA.
-- Hostinger domain-ownership verification currently returns is_accessible=false.
-- Because the public hostname is not resolving consistently, external live HTTP, robots, sitemap, form, mobile, and Search Console QA remain blocked even though the production files and PHP runtime are deployed on Hostinger.
+- Hostinger domain-ownership verification was rechecked after server QA and still returns is_accessible=false.
+- A Hostinger-generated free hostingersite.com name could not be parked on this shared-access website, and creating a separate preview website on the shared order returned Not found; no preview object was left behind.
+- Because the public hostname does not currently resolve to the Hostinger website, external HTTPS/TLS, browser/mobile, public robots/sitemap, public form, and Search Console QA remain blocked even though the deployed production PHP runtime passes server-side QA.
 
 ## Crawl / release rules
 - Review mode defaults to true in source but production deployment sets ENKAF_REVIEW_MODE=false.
 - Review mode returns X-Robots-Tag noindex,nofollow and robots Disallow: /.
-- Do not submit Search Console or create/promote conversion tracking until public DNS resolves and live health, release marker, robots, sitemap, form, and mobile checks pass.
+- Do not submit Search Console or create/promote conversion tracking until public DNS resolves and external live health, release marker, robots, sitemap, form, and mobile checks pass.
