@@ -1,0 +1,1 @@
+Final deployment waits for binary logo tree correction and source verification.
