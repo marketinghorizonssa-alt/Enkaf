@@ -30,14 +30,17 @@ for _ in $(seq 1 20); do
   sleep 0.25
 done
 grep -Fq '"ok":true' "$TMP/health.json" || fail health
-
 grep -Fq '"review_mode":false' "$TMP/health.json" || fail review_mode
+
+encode_path() {
+  php -r '$p=$argv[1];$q="";if(($i=strpos($p,"?"))!==false){$q=substr($p,$i);$p=substr($p,0,$i);}echo implode("/",array_map("rawurlencode",explode("/",$p))).$q;' "$1"
+}
 
 request() {
   local path="$1" expected="$2" name="$3"
-  local body="$TMP/${name}.body" headers="$TMP/${name}.headers"
-  local code
-  code="$(curl -sS -H 'Host: enkaf.sa' -D "$headers" -o "$body" -w '%{http_code}' "http://127.0.0.1:${PORT}${path}")"
+  local body="$TMP/${name}.body" headers="$TMP/${name}.headers" encoded code
+  encoded="$(encode_path "$path")"
+  code="$(curl -sS -H 'Host: enkaf.sa' -D "$headers" -o "$body" -w '%{http_code}' "http://127.0.0.1:${PORT}${encoded}")"
   [ "$code" = "$expected" ] || fail "${name}_status_${code}"
 }
 
