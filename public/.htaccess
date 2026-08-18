@@ -1,0 +1,25 @@
+Options -Indexes
+RewriteEngine On
+
+# Force canonical crawl-control routes through PHP before existing-file checks.
+RewriteRule ^robots\.txt$ index.php [L,QSA]
+RewriteRule ^sitemap\.xml$ index.php [L,QSA]
+
+# Block private application directories if the document root is ever misconfigured.
+RewriteRule ^(?:app|private|docs|scripts)(?:/|$) - [F,L]
+
+# Serve real public assets/files directly.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Route all application URLs to the front controller.
+RewriteRule ^ index.php [L,QSA]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  <FilesMatch "\.(?:css|js|svg|png|jpg|jpeg|webp)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>

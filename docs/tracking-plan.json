@@ -1,0 +1,42 @@
+{
+  "client": "ENKAF",
+  "event_source": "GTM listener over DOM events/data attributes",
+  "events": [
+    {
+      "domain_event": "enkaf:lead-success",
+      "gtm_event": "lead_form_success",
+      "conversion_role": "intended long-term Primary after QA",
+      "fire_condition": "durable server acknowledgement only"
+    },
+    {
+      "selector": "a[data-event=click_call]",
+      "gtm_event": "click_call",
+      "conversion_role": "Secondary initially"
+    },
+    {
+      "selector": "a[data-event=click_whatsapp]",
+      "gtm_event": "click_whatsapp",
+      "conversion_role": "Secondary initially"
+    },
+    {
+      "selector": "a[data-event=whatsapp_after_form]",
+      "gtm_event": "whatsapp_after_form",
+      "conversion_role": "Secondary follow-up; never a second lead"
+    },
+    {
+      "domain_event": "enkaf:form-start",
+      "gtm_event": "form_start",
+      "conversion_role": "diagnostic only"
+    },
+    {
+      "domain_event": "enkaf:form-submit-error",
+      "gtm_event": "form_submit_error",
+      "conversion_role": "diagnostic only"
+    },
+    {
+      "domain_event": "enkaf:thank-you-view",
+      "gtm_event": "thank_you_view",
+      "conversion_role": "diagnostic only"
+    }
+  ]
+}

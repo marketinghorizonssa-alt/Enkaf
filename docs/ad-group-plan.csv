@@ -1,0 +1,18 @@
+﻿Ad Group,Intent family,Landing ID,Landing path,Activation,Initial match,Examples / roots,Notes
+AG01 | محامي ومكتب محاماة,General lawyer / consultation,LP01,/محامي-واستشارات-قانونية/,CONTROLLED_TEST,EXACT,محامي؛ مكتب محاماة؛ شركة محاماة,"Huge volume, broad intent; isolate budget."
+AG02 | استشارات قانونية,General lawyer / consultation,LP01,/محامي-واستشارات-قانونية/,CONTROLLED_TEST,EXACT + PHRASE,استشارة قانونية؛ استشارات قانونية؛ مكتب استشارات قانونية,Exclude free/WhatsApp-free variants.
+AG03 | محامي شركات,Corporate / company formation,LP02,/محامي-شركات-وتأسيس-شركات/,CORE,EXACT + PHRASE,محامي شركات؛ محامي تجاري؛ مستشار قانوني للشركات,Very high bid signal on محامي شركات.
+AG04 | تأسيس شركات في السعودية,Corporate / company formation,LP02,/محامي-شركات-وتأسيس-شركات/,CORE,EXACT + PHRASE,تأسيس شركات؛ تأسيس شركة في السعودية؛ فتح شركة,Separate DIY-only queries into SEO.
+AG05 | شركة أجنبية واستثمار أجنبي,Corporate / company formation,LP02,/محامي-شركات-وتأسيس-شركات/,CONTROLLED_TEST,EXACT,تأسيس شركة أجنبية في السعودية؛ شريك أجنبي؛ استثمار أجنبي,Strategic brandbook fit despite low/blank planner volume.
+AG06 | صياغة ومراجعة العقود,Corporate / company formation,LP02,/محامي-شركات-وتأسيس-شركات/,CORE,EXACT + PHRASE,صياغة عقود؛ مراجعة عقود؛ محامي عقود,High intent; avoid template/formula searches.
+AG07 | حوكمة واستشارات الشركات,Corporate / company formation,LP02,/محامي-شركات-وتأسيس-شركات/,CONTROLLED_TEST,EXACT,حوكمة الشركات؛ استشارات قانونية تجارية,Pure informational governance queries go SEO-first.
+AG08 | قضايا ومحامي تجاري,Commercial disputes / enforcement,LP03,/قضايا-تجارية-وتحصيل-ديون/,CORE,EXACT + PHRASE,محامي قضايا تجارية؛ قضايا تجارية,High bid and strong dispute intent.
+AG09 | تحصيل الديون,Commercial disputes / enforcement,LP03,/قضايا-تجارية-وتحصيل-ديون/,CORE,EXACT + PHRASE,تحصيل ديون؛ مكتب تحصيل ديون؛ محامي تحصيل ديون,Watch for telecom/consumer collection brand queries.
+AG10 | تنفيذ الأحكام,Commercial disputes / enforcement,LP03,/قضايا-تجارية-وتحصيل-ديون/,CORE,EXACT,تنفيذ أحكام؛ محامي تنفيذ؛ محامي محكمة التنفيذ,Negative court navigation and phone-number queries.
+AG11 | التحكيم وفض المنازعات,Commercial disputes / enforcement,LP03,/قضايا-تجارية-وتحصيل-ديون/,CONTROLLED_TEST,EXACT,تحكيم تجاري؛ فض المنازعات,Low volume but aligned high-value B2B intent.
+AG12 | تسجيل علامة تجارية,Trademarks & IP,LP04,/تسجيل-علامة-تجارية-والملكية-الفكرية/,CORE,EXACT + PHRASE,تسجيل علامة تجارية؛ مكتب تسجيل علامة تجارية,Dedicated landing strongly justified.
+AG13 | الملكية الفكرية,Trademarks & IP,LP04,/تسجيل-علامة-تجارية-والملكية-الفكرية/,CONTROLLED_TEST,EXACT,حماية الملكية الفكرية؛ براءة اختراع,Broader education queries SEO-first.
+AG14 | محامي عقاري,Real estate legal,LP05,/محامي-عقاري-وتوثيق-عقود/,CORE,EXACT + PHRASE,محامي عقاري؛ محامي عقارات؛ محامي مختص في العقار,Strong lawyer-intent CPC.
+AG15 | منازعات وعقود عقارية,Real estate legal,LP05,/محامي-عقاري-وتوثيق-عقود/,CORE / TEST,EXACT,محامي منازعات عقارية؛ محامي عقود إيجار؛ قضايا عقارية,"Use real-estate-specific copy, not generic notarization."
+AG16 | قضايا عمالية,Labor law,LP01,/محامي-واستشارات-قانونية/,PHASE 2,EXACT,محامي قضايا عمالية؛ محامي مكتب العمل,"Commercial, but confirm priority/service scope before separate landing."
+AG17 | تركات ومواريث,Inheritance / estates,LP01,/محامي-واستشارات-قانونية/,PHASE 2,EXACT,محامي تركات؛ محامي مواريث,"Commercial, but confirm service scope before launch."
