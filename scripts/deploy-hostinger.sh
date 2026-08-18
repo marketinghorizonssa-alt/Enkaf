@@ -114,13 +114,15 @@ EOF
 
 printf '%s\n' "$COMMIT" > "$DOMAIN_ROOT/.enkaf-release"
 printf '%s\n' "$COMMIT" > "$PUBLIC_ROOT/.enkaf-release"
-chmod 644 "$PUBLIC_ROOT/.enkaf-release"
+printf '%s\n' "$COMMIT" > "$PUBLIC_ROOT/enkaf-release.txt"
+chmod 644 "$PUBLIC_ROOT/.enkaf-release" "$PUBLIC_ROOT/enkaf-release.txt"
 
-sleep 2
-HEALTH="$(curl -fLsS --max-time 20 "https://${DOMAIN}/healthz/" || true)"
-RELEASE="$(curl -fLsS --max-time 20 "https://${DOMAIN}/.enkaf-release" || true)"
+# The hosting account can temporarily fail to resolve its own public hostname.
+# Verify the PHP runtime directly on-server, then verify the public hostname separately after deploy.
+HEALTH="$(ENKAF_SITE_URL="https://${DOMAIN}" ENKAF_REVIEW_MODE="$REVIEW_MODE" ENKAF_DATA_DIR="$PRIVATE_ROOT" REQUEST_URI='/healthz/' REQUEST_METHOD='GET' php "$PUBLIC_ROOT/index.php" 2>/dev/null || true)"
+RELEASE="$(cat "$DOMAIN_ROOT/.enkaf-release" 2>/dev/null || true)"
 if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE" | tr -d '\r\n')" != "$COMMIT" ]; then
-  echo "ENKAF_DEPLOY_ERROR live_verification_failed commit=${COMMIT}"
+  echo "ENKAF_DEPLOY_ERROR local_verification_failed commit=${COMMIT}"
   rollback
   exit 4
 fi
