@@ -87,7 +87,19 @@ Automatic attribution:
 - Verified sitemap response is XML and contains exactly seven https://enkaf.sa canonical URLs.
 - Verified invalid lead POST returns 422 validation_error.
 - Verified a valid lead POST returns 201 with ok=true and an ENK-* lead reference, and a durable NDJSON row is written before success in the isolated QA data directory.
-- Temporary QA/download commands and the downloaded QA shell file were removed after the test. Latest verified Hostinger cron list is empty.
+- Temporary QA/download commands and the downloaded QA shell file were removed after the test.
+
+## Hostinger origin / real-vhost QA
+- Exact Hostinger origin confirmed for this ENKAF vhost: 145.223.36.55.
+- Confirmation method: HTTP request to 145.223.36.55 with Host: enkaf.sa returned the ENKAF health JSON for build enkaf-2026-08-18-a.
+- The real LiteSpeed vhost returned /.enkaf-release as HTTP 200 with exact body 9564d10852efaedaa248f21788fcd75c3dd4e55a.
+- The real LiteSpeed vhost returned /healthz/ as HTTP 200 with the ENKAF security headers and application/json.
+- Exact Google-InspectionTool user-agent request to the real origin returned the production robots groups with empty Disallow directives and Sitemap: https://enkaf.sa/sitemap.xml.
+- Exact Google-InspectionTool-style request to the real origin returned /sitemap.xml as HTTP 200 with Content-Type application/xml and no-cache headers.
+- Independent real-origin sitemap count returned exactly 7 <loc> entries.
+- Hostinger PHP expose_php was changed from On to Off and read back as Off; the real health response no longer exposed an X-Powered-By header.
+- HTTPS forced directly to the origin by IP is not considered complete: TLS currently fails before public DNS is pointed, so certificate/HTTPS QA remains pending DNS activation.
+- All temporary origin/QA cron jobs were removed; latest verified Hostinger cron list is empty.
 
 ## Legacy WordPress disposition
 - User explicitly authorized treating the old WordPress site as disposable legacy material and continuing as if the domain were empty.
@@ -108,8 +120,10 @@ Automatic attribution:
 - www.enkaf.sa A lookup returned NXDOMAIN.
 - Authority observed in the DNS responses: ns10.dnetns.com / dnet.sa SOA.
 - Hostinger domain-ownership verification was rechecked after server QA and still returns is_accessible=false.
+- Verified DNS target for the root A record is 145.223.36.55; this is not inferred from a generic Hostinger hostname, it was validated against the ENKAF vhost itself.
+- Intended DNS change: point the root/apex A record to 145.223.36.55 and point www to enkaf.sa (CNAME preferred where supported), preserving existing NS, MX, and unrelated TXT records.
 - A Hostinger-generated free hostingersite.com name could not be parked on this shared-access website, and creating a separate preview website on the shared order returned Not found; no preview object was left behind.
-- Because the public hostname does not currently resolve to the Hostinger website, external HTTPS/TLS, browser/mobile, public robots/sitemap, public form, and Search Console QA remain blocked even though the deployed production PHP runtime passes server-side QA.
+- Because the public hostname does not currently resolve to the Hostinger website, external HTTPS/TLS, browser/mobile, public robots/sitemap, public form, and Search Console QA remain blocked even though the deployed production PHP runtime and real Hostinger origin both pass server-side QA.
 
 ## Crawl / release rules
 - Review mode defaults to true in source but production deployment sets ENKAF_REVIEW_MODE=false.
