@@ -66,7 +66,7 @@ for item in "${pages[@]}"; do
   grep -Fq 'data-event="click_call"' "$body" || fail "${name}_call_cta"
   grep -Fq 'data-event="click_whatsapp"' "$body" || fail "${name}_whatsapp_cta"
   ! grep -qi '^X-Robots-Tag:.*noindex' "$headers" || fail "${name}_noindex"
-  sed -n 's:.*<title>\(.*\)</title>.*:\1:p' "$body" | head -n1 >>"$TMP/titles.txt"
+  php -r '$s=file_get_contents($argv[1]);if(preg_match("~<title>([^<]+)</title>~u",$s,$m)){echo html_entity_decode($m[1],ENT_QUOTES|ENT_HTML5,"UTF-8"),PHP_EOL;}' "$body" >>"$TMP/titles.txt"
 done
 [ "$(wc -l < "$TMP/titles.txt" | tr -d ' ')" = "6" ] || fail title_count
 [ "$(sort "$TMP/titles.txt" | uniq | wc -l | tr -d ' ')" = "6" ] || fail duplicate_titles
