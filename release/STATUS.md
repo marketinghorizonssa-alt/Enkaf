@@ -1,0 +1,1 @@
+Binary logo correction pending final tree commit before deployment.
