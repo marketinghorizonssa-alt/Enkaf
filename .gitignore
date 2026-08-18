@@ -1,0 +1,5 @@
+/private/*
+!/private/.gitkeep
+.env
+*.log
+.DS_Store
