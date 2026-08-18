@@ -13,6 +13,9 @@ BACKUP_ROOT="${DOMAIN_ROOT}/enkaf-backups"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 WORK="${DOMAIN_ROOT}/.enkaf-deploy-${STAMP}"
 ARCHIVE="${WORK}/source.tar.gz"
+BACKUP="${BACKUP_ROOT}/before-${COMMIT:0:12}-${STAMP}.tar.gz"
+HAD_PUBLIC=0
+HAD_APP=0
 
 if ! printf '%s' "$COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
   echo "ENKAF_DEPLOY_ERROR invalid_commit"
@@ -42,14 +45,41 @@ if [ -z "$SRC" ] || [ ! -f "$SRC/public/index.php" ] || [ ! -f "$SRC/app/config.
   exit 3
 fi
 
-bash "$SRC/scripts/validate.sh"
-
-BACKUP="${BACKUP_ROOT}/before-${COMMIT:0:12}-${STAMP}.tar.gz"
-if [ -d "$PUBLIC_ROOT" ]; then
-  tar -czf "$BACKUP" -C "$DOMAIN_ROOT" public_html $( [ -d "$APP_ROOT" ] && printf '%s' app || true )
+if command -v node >/dev/null 2>&1; then
+  bash "$SRC/scripts/validate.sh"
+else
+  find "$SRC/app" "$SRC/public" -type f -name '*.php' -print0 | while IFS= read -r -d '' f; do php -l "$f" >/dev/null; done
+  if grep -RniE 'arkan|shaghel|easttwist|GTM-P5J6D6ND|AW-18127536852|AW-18303013990' "$SRC/app" "$SRC/public" "$SRC/docs"; then
+    echo "ENKAF_DEPLOY_ERROR cross_client_token"
+    exit 3
+  fi
+  echo "ENKAF_SERVER_VALIDATE_OK"
 fi
 
-mkdir -p "$PUBLIC_ROOT"
+if [ -d "$PUBLIC_ROOT" ]; then HAD_PUBLIC=1; fi
+if [ -d "$APP_ROOT" ]; then HAD_APP=1; fi
+if [ "$HAD_PUBLIC" -eq 1 ] || [ "$HAD_APP" -eq 1 ]; then
+  ITEMS=""
+  [ "$HAD_PUBLIC" -eq 1 ] && ITEMS="public_html"
+  [ "$HAD_APP" -eq 1 ] && ITEMS="${ITEMS} app"
+  # shellcheck disable=SC2086
+  tar -czf "$BACKUP" -C "$DOMAIN_ROOT" $ITEMS
+fi
+
+rollback() {
+  echo "ENKAF_DEPLOY_ROLLBACK starting"
+  rm -rf "$PUBLIC_ROOT" "$APP_ROOT"
+  if [ -f "$BACKUP" ]; then
+    tar -xzf "$BACKUP" -C "$DOMAIN_ROOT"
+  else
+    [ "$HAD_PUBLIC" -eq 1 ] && mkdir -p "$PUBLIC_ROOT"
+    [ "$HAD_APP" -eq 1 ] && mkdir -p "$APP_ROOT"
+  fi
+  rm -f "$DOMAIN_ROOT/.enkaf-release"
+  echo "ENKAF_DEPLOY_ROLLBACK done backup=${BACKUP}"
+}
+
+mkdir -p "$PUBLIC_ROOT" "$APP_ROOT"
 find "$PUBLIC_ROOT" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 rm -rf "$APP_ROOT"
 mkdir -p "$APP_ROOT"
@@ -68,10 +98,12 @@ printf '%s\n' "$COMMIT" > "$DOMAIN_ROOT/.enkaf-release"
 printf '%s\n' "$COMMIT" > "$PUBLIC_ROOT/.enkaf-release"
 chmod 644 "$PUBLIC_ROOT/.enkaf-release"
 
+sleep 2
 HEALTH="$(curl -fLsS --max-time 20 "https://${DOMAIN}/healthz/" || true)"
-if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || ! printf '%s' "$HEALTH" | grep -Fq "$COMMIT"; then
-  echo "ENKAF_DEPLOY_WARNING health_check_needs_manual_verification commit=${COMMIT}"
-  echo "ENKAF_DEPLOY_BACKUP ${BACKUP}"
+RELEASE="$(curl -fLsS --max-time 20 "https://${DOMAIN}/.enkaf-release" || true)"
+if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE" | tr -d '\r\n')" != "$COMMIT" ]; then
+  echo "ENKAF_DEPLOY_ERROR live_verification_failed commit=${COMMIT}"
+  rollback
   exit 4
 fi
 
