@@ -3,7 +3,11 @@
 
   const qs = (s, root = document) => root.querySelector(s);
   const qsa = (s, root = document) => Array.from(root.querySelectorAll(s));
-  const attribKeys = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','gbraid','wbraid','ttclid','fbclid'];
+  const attribKeys = [
+    'utm_source','utm_medium','utm_campaign','utm_term','utm_content',
+    'gclid','gbraid','wbraid','ttclid','fbclid',
+    'campaignid','adgroupid','creative','keyword','matchtype','device','network','targetid','loc_physical_ms','gad_source','gad_campaignid'
+  ];
 
   function safeGet(storage, key) {
     try { return storage.getItem(key) || ''; } catch (_) { return ''; }
@@ -27,6 +31,10 @@
     });
     if (!safeGet(sessionStorage, 'enkaf_first_landing_url')) safeSet(sessionStorage, 'enkaf_first_landing_url', location.href);
     if (!safeGet(sessionStorage, 'enkaf_referrer') && document.referrer) safeSet(sessionStorage, 'enkaf_referrer', document.referrer);
+  }
+  function asciiDigits(value) {
+    const map = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
+    return String(value || '').replace(/[٠-٩۰-۹]/g, d => map[d] || d);
   }
   captureAttribution();
 
@@ -61,23 +69,30 @@
       status.classList.remove('error');
     }
     function showErrors(fields = {}) {
+      let firstInvalid = null;
       Object.entries(fields).forEach(([key, message]) => {
         const target = qs(`[data-error-for="${key}"]`, form);
         const input = qs(`[name="${key}"]`, form);
         if (target) target.textContent = message;
-        if (input) input.setAttribute('aria-invalid', 'true');
+        if (input) {
+          input.setAttribute('aria-invalid', 'true');
+          if (!firstInvalid) firstInvalid = input;
+        }
       });
+      if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus({ preventScroll: true });
     }
     function clientValidate() {
       const fields = {};
       const name = qs('[name="full_name"]', form).value.trim();
-      const phone = qs('[name="phone"]', form).value.trim().replace(/\s+/g, '');
+      const rawPhone = asciiDigits(qs('[name="phone"]', form).value);
+      const phoneDigits = rawPhone.replace(/\D/g, '');
       if (name.length < 2) fields.full_name = 'اكتب الاسم بشكل صحيح.';
-      if (!/^(?:\+?966|00966|0)?5\d{8}$/.test(phone.replace(/[-()]/g, ''))) fields.phone = 'اكتب رقم جوال سعودي صحيح.';
+      if (phoneDigits.length < 7 || phoneDigits.length > 15) fields.phone = 'اكتب رقم هاتف صحيح.';
       if (!service.value) fields.service = 'اختر نوع الخدمة القانونية.';
       if (!qs('[name="privacy_consent"]', form).checked) fields.privacy_consent = 'يلزم الموافقة على سياسة الخصوصية.';
       return fields;
     }
+
     form.addEventListener('focusin', () => {
       if (!started) {
         started = true;
