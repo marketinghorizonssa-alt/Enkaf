@@ -10,15 +10,48 @@ function private_data_dir(): string {
     return $dir;
 }
 
-function normalize_saudi_phone(string $raw): ?string {
-    $value = preg_replace('/[^0-9+]/', '', trim($raw));
-    if ($value === null) return null;
-    if (str_starts_with($value, '00966')) $value = '+' . substr($value, 2);
-    if (preg_match('/^05\d{8}$/', $value)) return '+966' . substr($value, 1);
-    if (preg_match('/^5\d{8}$/', $value)) return '+966' . $value;
-    if (preg_match('/^\+9665\d{8}$/', $value)) return $value;
-    if (preg_match('/^9665\d{8}$/', $value)) return '+' . $value;
-    return null;
+function ascii_digits(string $value): string {
+    return strtr($value, [
+        '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9',
+        '۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
+    ]);
+}
+
+function normalize_contact_phone(string $raw): ?array {
+    $input = trim(ascii_digits($raw));
+    $digits = preg_replace('/\D+/', '', $input);
+    if ($digits === null) return null;
+    $len = strlen($digits);
+    if ($len < 7 || $len > 15) return null;
+
+    $normalized = $digits;
+    $e164 = '';
+
+    if (preg_match('/^00966(5\d{8})$/', $digits, $m)) {
+        $normalized = '+966' . $m[1];
+        $e164 = $normalized;
+    } elseif (preg_match('/^966(5\d{8})$/', $digits, $m)) {
+        $normalized = '+966' . $m[1];
+        $e164 = $normalized;
+    } elseif (preg_match('/^05\d{8}$/', $digits)) {
+        $normalized = '+966' . substr($digits, 1);
+        $e164 = $normalized;
+    } elseif (preg_match('/^5\d{8}$/', $digits)) {
+        $normalized = '+966' . $digits;
+        $e164 = $normalized;
+    } elseif (str_starts_with($input, '+') && $len >= 8) {
+        $normalized = '+' . $digits;
+        $e164 = $normalized;
+    } elseif (str_starts_with($digits, '00') && $len >= 10) {
+        $normalized = '+' . substr($digits, 2);
+        $e164 = $normalized;
+    }
+
+    return [
+        'input' => u_substr($input, 40),
+        'normalized' => $normalized,
+        'e164' => $e164,
+    ];
 }
 
 function u_substr(string $value, int $max): string {
@@ -96,7 +129,8 @@ function append_lead(array $lead): array {
     $since = time() - 86400;
     $duplicate = false;
     foreach ($existing as $row) {
-        if (($row['phone_e164'] ?? '') === $lead['phone_e164'] && strtotime((string)($row['created_at'] ?? '1970-01-01')) >= $since) {
+        $existingPhone = (string)($row['phone_normalized'] ?? $row['phone_e164'] ?? '');
+        if ($existingPhone !== '' && $existingPhone === $lead['phone_normalized'] && strtotime((string)($row['created_at'] ?? '1970-01-01')) >= $since) {
             $duplicate = true;
             break;
         }
@@ -133,14 +167,14 @@ function handle_lead_submission(): never {
     }
 
     $name = payload_value($payload, 'full_name', 100);
-    $phone = normalize_saudi_phone(payload_value($payload, 'phone', 40));
+    $phone = normalize_contact_phone(payload_value($payload, 'phone', 40));
     $serviceKey = payload_value($payload, 'service', 80);
     $services = service_options();
     $consent = in_array((string)($payload['privacy_consent'] ?? ''), ['1','true','on','yes'], true);
 
     $errors = [];
     if (u_strlen($name) < 2) $errors['full_name'] = 'اكتب الاسم بشكل صحيح.';
-    if ($phone === null) $errors['phone'] = 'اكتب رقم جوال سعودي صحيح.';
+    if ($phone === null) $errors['phone'] = 'اكتب رقم هاتف صحيح.';
     if (!isset($services[$serviceKey])) $errors['service'] = 'اختر نوع الخدمة القانونية.';
     if (!$consent) $errors['privacy_consent'] = 'يلزم الموافقة على سياسة الخصوصية قبل الإرسال.';
     if ($errors) json_response(['ok' => false, 'error' => 'validation_error', 'fields' => $errors], 422);
@@ -150,7 +184,6 @@ function handle_lead_submission(): never {
             json_response(['ok' => false, 'error' => 'rate_limited', 'message' => 'تم استلام عدة محاولات خلال وقت قصير. حاول مرة أخرى بعد قليل.'], 429);
         }
         $nowIso = gmdate('c');
-        $cfg = site_config();
         $landingPath = payload_value($payload, 'landing_path', 300) ?: '/';
         $landingUrl = payload_value($payload, 'landing_url', 1000) ?: absolute_url($landingPath);
         $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
@@ -158,7 +191,9 @@ function handle_lead_submission(): never {
             'lead_id' => generate_lead_id(),
             'created_at' => $nowIso,
             'full_name' => $name,
-            'phone_e164' => $phone,
+            'phone_input' => $phone['input'],
+            'phone_normalized' => $phone['normalized'],
+            'phone_e164' => $phone['e164'],
             'service_key' => $serviceKey,
             'service_label' => $services[$serviceKey],
             'landing_page_id' => payload_value($payload, 'landing_page_id', 40),
@@ -174,6 +209,15 @@ function handle_lead_submission(): never {
             'wbraid' => payload_value($payload, 'wbraid', 300),
             'ttclid' => payload_value($payload, 'ttclid', 300),
             'fbclid' => payload_value($payload, 'fbclid', 300),
+            'campaignid' => payload_value($payload, 'campaignid', 120),
+            'adgroupid' => payload_value($payload, 'adgroupid', 120),
+            'creative' => payload_value($payload, 'creative', 120),
+            'keyword' => payload_value($payload, 'keyword', 300),
+            'matchtype' => payload_value($payload, 'matchtype', 40),
+            'device' => payload_value($payload, 'device', 40),
+            'network' => payload_value($payload, 'network', 40),
+            'targetid' => payload_value($payload, 'targetid', 120),
+            'loc_physical_ms' => payload_value($payload, 'loc_physical_ms', 80),
             'referrer' => payload_value($payload, 'referrer', 1000),
             'first_landing_url' => payload_value($payload, 'first_landing_url', 1000),
             'session_id' => payload_value($payload, 'session_id', 120),
@@ -210,7 +254,7 @@ function handle_lead_feed(): never {
     header('Cache-Control: no-store, private');
     $out = fopen('php://output', 'wb');
     fwrite($out, "\xEF\xBB\xBF");
-    $headers = ['Lead ID','Created At','Name','Phone','Service','Landing Page ID','Landing Path','UTM Source','UTM Medium','UTM Campaign','UTM Term','UTM Content','GCLID','GBRAID','WBRAID','TTCLID','FBCLID','Referrer','First Landing URL','Session ID','Consent','Consent Version','Consent At','Server Submit At','Duplicate Flag'];
+    $headers = ['Lead ID','Created At','Name','Phone','Phone E164','Service','Landing Page ID','Landing Path','UTM Source','UTM Medium','UTM Campaign','UTM Term','UTM Content','GCLID','GBRAID','WBRAID','TTCLID','FBCLID','Campaign ID','Ad Group ID','Creative','Keyword','Match Type','Device','Network','Target ID','Location ID','Referrer','First Landing URL','Session ID','Consent','Consent Version','Consent At','Server Submit At','Duplicate Flag'];
     fputcsv($out, $headers);
     if (is_file($path)) {
         $rows = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
@@ -218,10 +262,11 @@ function handle_lead_feed(): never {
             $r = json_decode($line, true);
             if (!is_array($r)) continue;
             fputcsv($out, [
-                $r['lead_id'] ?? '',$r['created_at'] ?? '',$r['full_name'] ?? '',$r['phone_e164'] ?? '',$r['service_label'] ?? '',
+                $r['lead_id'] ?? '',$r['created_at'] ?? '',$r['full_name'] ?? '',$r['phone_normalized'] ?? ($r['phone_e164'] ?? ''),$r['phone_e164'] ?? '',$r['service_label'] ?? '',
                 $r['landing_page_id'] ?? '',$r['landing_path'] ?? '',$r['utm_source'] ?? '',$r['utm_medium'] ?? '',$r['utm_campaign'] ?? '',
-                $r['utm_term'] ?? '',$r['utm_content'] ?? '',$r['gclid'] ?? '',$r['gbraid'] ?? '',$r['wbraid'] ?? '',$r['ttclid'] ?? '',
-                $r['fbclid'] ?? '',$r['referrer'] ?? '',$r['first_landing_url'] ?? '',$r['session_id'] ?? '',!empty($r['consent']) ? 'TRUE' : 'FALSE',
+                $r['utm_term'] ?? '',$r['utm_content'] ?? '',$r['gclid'] ?? '',$r['gbraid'] ?? '',$r['wbraid'] ?? '',$r['ttclid'] ?? '',$r['fbclid'] ?? '',
+                $r['campaignid'] ?? '',$r['adgroupid'] ?? '',$r['creative'] ?? '',$r['keyword'] ?? '',$r['matchtype'] ?? '',$r['device'] ?? '',$r['network'] ?? '',$r['targetid'] ?? '',$r['loc_physical_ms'] ?? '',
+                $r['referrer'] ?? '',$r['first_landing_url'] ?? '',$r['session_id'] ?? '',!empty($r['consent']) ? 'TRUE' : 'FALSE',
                 $r['consent_version'] ?? '',$r['consent_at'] ?? '',$r['server_submit_at'] ?? '',!empty($r['duplicate_flag']) ? 'TRUE' : 'FALSE'
             ]);
         }
