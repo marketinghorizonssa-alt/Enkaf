@@ -40,7 +40,7 @@
     if (qs('link[data-enkaf-refresh]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '/assets/css/refresh.css?v=20260819b';
+    link.href = '/assets/css/refresh.css?v=20260819c';
     link.dataset.enkafRefresh = '1';
     document.head.appendChild(link);
   }
@@ -53,9 +53,25 @@
       form.appendChild(input);
     });
   }
+  function pageHook() {
+    const cls = document.body.className;
+    if (cls.includes('theme-corporate')) return 'أسّس قرارك التجاري على أرض قانونية أوضح.';
+    if (cls.includes('theme-disputes')) return 'في النزاع، وضوح المسار من البداية يصنع فرقًا.';
+    if (cls.includes('theme-ip')) return 'احمِ اسمك وحقوقك الفكرية بخطوات منظمة.';
+    if (cls.includes('theme-realestate')) return 'العقد الواضح اليوم يقلّل مساحة النزاع غدًا.';
+    if (cls.includes('theme-general')) return 'قبل أي خطوة قانونية، خلّي موقفك أوضح.';
+    return 'ابدأ بفهم قانوني أوضح قبل القرار التالي.';
+  }
   function enhanceVisualDesign() {
-    const hero = qs('.hero');
-    if (hero && !qs('.hero-showcase', hero)) {
+    const heroCopy = qs('.hero-copy');
+    if (heroCopy && !qs('.hero-hookline', heroCopy)) {
+      const hook = document.createElement('div');
+      hook.className = 'hero-hookline';
+      hook.textContent = pageHook();
+      const h1 = qs('h1', heroCopy);
+      if (h1) heroCopy.insertBefore(hook, h1);
+    }
+    if (heroCopy && !qs('.hero-showcase', heroCopy)) {
       const showcase = document.createElement('div');
       showcase.className = 'hero-showcase';
       showcase.setAttribute('aria-hidden', 'true');
@@ -66,7 +82,7 @@
           <span class="hero-showcase-badge b2">للأفراد والشركات</span>
           <span class="hero-showcase-badge b3">خطوة أولى سريعة</span>
         </div>`;
-      hero.appendChild(showcase);
+      heroCopy.appendChild(showcase);
     }
 
     const form = qs('#leadForm');
