@@ -36,7 +36,72 @@
     const map = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
     return String(value || '').replace(/[٠-٩۰-۹]/g, d => map[d] || d);
   }
+  function injectRefreshStyles() {
+    if (qs('link[data-enkaf-refresh]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/assets/css/refresh.css?v=20260819b';
+    link.dataset.enkafRefresh = '1';
+    document.head.appendChild(link);
+  }
+  function ensureHiddenInputs(form) {
+    attribKeys.forEach((key) => {
+      if (qs(`[name="${key}"]`, form)) return;
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      form.appendChild(input);
+    });
+  }
+  function enhanceVisualDesign() {
+    const hero = qs('.hero');
+    if (hero && !qs('.hero-showcase', hero)) {
+      const showcase = document.createElement('div');
+      showcase.className = 'hero-showcase';
+      showcase.setAttribute('aria-hidden', 'true');
+      showcase.innerHTML = `
+        <img src="/assets/img/enkaf-legal-visual.svg" width="820" height="420" alt="" decoding="async">
+        <div class="hero-showcase-badges">
+          <span class="hero-showcase-badge b1">فهم قانوني واضح</span>
+          <span class="hero-showcase-badge b2">للأفراد والشركات</span>
+          <span class="hero-showcase-badge b3">خطوة أولى سريعة</span>
+        </div>`;
+      hero.appendChild(showcase);
+    }
+
+    const form = qs('#leadForm');
+    if (!form) return;
+    ensureHiddenInputs(form);
+    form.autocomplete = 'on';
+
+    const phone = qs('[name="phone"]', form);
+    if (phone) {
+      phone.placeholder = 'اكتب رقمك بأي صيغة';
+      phone.setAttribute('autocomplete', 'tel');
+      phone.setAttribute('inputmode', 'tel');
+      if (!qs('#phoneHelp', form)) {
+        const help = document.createElement('small');
+        help.id = 'phoneHelp';
+        help.className = 'phone-help';
+        help.textContent = 'اكتب الرقم بالطريقة المعتادة لديك؛ لا نطلب منك إضافة كود دولة أو صيغة محددة.';
+        const field = phone.closest('.field');
+        if (field) field.insertAdjacentElement('afterend', help);
+        phone.setAttribute('aria-describedby', 'phoneHelp');
+      }
+    }
+
+    const intro = qs('.form-intro');
+    if (intro && !qs('.form-speed-note')) {
+      const note = document.createElement('div');
+      note.className = 'form-speed-note';
+      note.innerHTML = '<span class="form-speed-icon">✓</span><span><strong>بيانات قليلة فقط.</strong> مصدر الإعلان والحملة ومعرّفات النقر تُحفظ تلقائيًا عند توفرها، والخدمة الأساسية محددة مسبقًا ويمكن تغييرها.</span>';
+      intro.insertAdjacentElement('afterend', note);
+    }
+  }
+
+  injectRefreshStyles();
   captureAttribution();
+  enhanceVisualDesign();
 
   const form = qs('#leadForm');
   if (form) {
@@ -49,6 +114,7 @@
       document.dispatchEvent(new CustomEvent(`enkaf:${name}`, { detail }));
     }
     function fillHidden() {
+      ensureHiddenInputs(form);
       const map = {
         landing_path: location.pathname,
         landing_url: location.href.split('#')[0],
