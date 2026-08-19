@@ -5,6 +5,7 @@
 - Brand: إنكاف للمحاماة والاستشارات القانونية
 - Reference URL: https://enkaf.sa/
 - Intended production domain: https://enkaf.sa/
+- Temporary review URL: https://enkaf.hositee.com/
 - Primary email: Info@enkaf.sa
 - Work email: Work@enkaf.sa
 - Approved phone supplied by client: 0559556606 / +966559556606
@@ -62,6 +63,7 @@ Automatic attribution:
 - Deployment reliability PRs: #2 backup-race fix; #3 server-local health verification for broken self-DNS.
 - Server-runtime QA tooling: PR #4 QA harness; PR #5 Arabic URL encoding fix; PR #6 robust title parser.
 - Latest QA tooling merge commit: 94383eb4a064764b921253c269540e83a5e2bd1d.
+- Temporary hositee preview deployment: PR #7; merge commit e84fc7db11d23797ed0ce9a6a9b82c784a9f261d; script scripts/deploy-hositee-preview.sh.
 - Legacy archive helper commit: f43c2dbf796c0eac56d573db92c2df7222bccd34
 - Local site validation before publication: ENKAF_LOCAL_VALIDATE_OK
 
@@ -101,6 +103,22 @@ Automatic attribution:
 - HTTPS forced directly to the origin by IP is not considered complete: TLS currently fails before public DNS is pointed, so certificate/HTTPS QA remains pending DNS activation.
 - All temporary origin/QA cron jobs were removed; latest verified Hostinger cron list is empty.
 
+## Temporary hositee preview deployment
+- User approved bypassing the blocked client DNS temporarily by using the controlled hositee.com domain.
+- Preview hostname: https://enkaf.hositee.com/.
+- Hostinger account username: u878466595.
+- Hostinger subdomain is enabled and isolated at /home/u878466595/domains/hositee.com/public_html/enkaf-site/public.
+- Preview application root: /home/u878466595/domains/hositee.com/public_html/enkaf-site.
+- Preview private lead data: /home/u878466595/enkaf-preview-private (outside the public web root).
+- Exact ENKAF website release deployed to preview: 9564d10852efaedaa248f21788fcd75c3dd4e55a.
+- Deployment result read back from Hostinger: ENKAF_PREVIEW_DEPLOY_OK commit=9564d10852efaedaa248f21788fcd75c3dd4e55a domain=enkaf.hositee.com review_mode=true.
+- Preview backup created at /home/u878466595/enkaf-preview-backups/before-9564d10852ef-20260819-140023.tar.gz.
+- Preview intentionally stays in review mode: X-Robots-Tag/meta noindex and robots Disallow: /. Do not submit this preview to Search Console or treat it as the final SEO hostname.
+- The preview is for visual/browser/form/tracking QA while enkaf.sa DNS access is being resolved.
+- Temporary ENKAF deployment/download cron jobs were removed after the successful deployment. Existing unrelated cron jobs for other client projects on the same hositee account were left untouched.
+- Hostinger API readback shows enkaf.hositee.com as an enabled subdomain vhost with the expected document root.
+- Independent external browser/HTTPS readback is still required before calling preview QA complete; the deployment itself and local health/robots checks passed.
+
 ## Legacy WordPress disposition
 - User explicitly authorized treating the old WordPress site as disposable legacy material and continuing as if the domain were empty.
 - Legacy WordPress is archival only and must not be used as production source, design source, or deployment source.
@@ -114,7 +132,7 @@ Automatic attribution:
 - No destructive database deletion was performed; the old database is not used by the ENKAF application.
 
 ## Current DNS blocker
-- Public DNS is not currently suitable for external live QA/indexing.
+- Public DNS for enkaf.sa is not currently suitable for external live QA/indexing.
 - DNS-over-HTTPS verification on 2026-08-18 returned NOERROR but no A answer for enkaf.sa.
 - DNS-over-HTTPS verification returned NOERROR but no AAAA answer for enkaf.sa.
 - www.enkaf.sa A lookup returned NXDOMAIN.
@@ -122,10 +140,11 @@ Automatic attribution:
 - Hostinger domain-ownership verification was rechecked after server QA and still returns is_accessible=false.
 - Verified DNS target for the root A record is 145.223.36.55; this is not inferred from a generic Hostinger hostname, it was validated against the ENKAF vhost itself.
 - Intended DNS change: point the root/apex A record to 145.223.36.55 and point www to enkaf.sa (CNAME preferred where supported), preserving existing NS, MX, and unrelated TXT records.
-- A Hostinger-generated free hostingersite.com name could not be parked on this shared-access website, and creating a separate preview website on the shared order returned Not found; no preview object was left behind.
-- Because the public hostname does not currently resolve to the Hostinger website, external HTTPS/TLS, browser/mobile, public robots/sitemap, public form, and Search Console QA remain blocked even though the deployed production PHP runtime and real Hostinger origin both pass server-side QA.
+- The hositee preview is now the approved temporary review target, so visual/form/tracking work can continue without changing the blocked client DNS. It does not replace enkaf.sa as the intended production domain.
 
 ## Crawl / release rules
 - Review mode defaults to true in source but production deployment sets ENKAF_REVIEW_MODE=false.
 - Review mode returns X-Robots-Tag noindex,nofollow and robots Disallow: /.
-- Do not submit Search Console or create/promote conversion tracking until public DNS resolves and external live health, release marker, robots, sitemap, form, and mobile checks pass.
+- Do not submit Search Console for enkaf.sa until public DNS resolves and external live health, release marker, robots, sitemap, form, and mobile checks pass.
+- Do not submit enkaf.hositee.com to Search Console; keep it noindex as a temporary review/tracking QA hostname.
+- Do not create/promote final Google Ads conversion tracking or activate campaigns until the approved live domain and end-to-end QA are verified.
