@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/app/config.php';
 require_once dirname(__DIR__) . '/app/helpers.php';
 require_once dirname(__DIR__) . '/app/leads.php';
-require_once dirname(__DIR__) . '/app/views.php';
+require_once dirname(__DIR__) . '/app/views-v2.php';
 
 $cfg = site_config();
 header('X-Content-Type-Options: nosniff');
@@ -26,6 +26,7 @@ if ($path === '/healthz/') {
         'ok' => true,
         'service' => 'enkaf-landing-site',
         'build' => BUILD_ID,
+        'design' => 'luxury-office-v2',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
     ], JSON_UNESCAPED_SLASHES);
@@ -56,7 +57,7 @@ if ($path === '/sitemap.xml/') {
     echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
     foreach ($urls as $u) {
-        echo '  <url><loc>' . htmlspecialchars(absolute_url($u), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><lastmod>2026-08-18</lastmod></url>' . "\n";
+        echo '  <url><loc>' . htmlspecialchars(absolute_url($u), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><lastmod>2026-08-20</lastmod></url>' . "\n";
     }
     echo '</urlset>';
     exit;
