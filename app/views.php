@@ -1,12 +1,33 @@
 <?php
 declare(strict_types=1);
 
+function hero_image_for_page(array $page): string {
+    return match ((string)($page['theme'] ?? 'home')) {
+        'corporate' => '/assets/img/office/hero-corporate.webp',
+        'disputes' => '/assets/img/office/hero-disputes.webp',
+        'ip' => '/assets/img/office/hero-ip.webp',
+        'realestate' => '/assets/img/office/hero-realestate.webp',
+        default => '/assets/img/office/hero-home.webp',
+    };
+}
+
+function hero_alt_for_page(array $page): string {
+    return match ((string)($page['theme'] ?? 'home')) {
+        'corporate' => 'محامٍ من فريق إنكاف في مكتب جدة',
+        'disputes' => 'عمل قانوني ومراجعة مستندات في إنكاف',
+        'ip' => 'مكتب إنكاف في جدة',
+        'realestate' => 'مكتب إنكاف في جدة وإطلالة المدينة',
+        default => 'مكتب إنكاف للمحاماة والاستشارات القانونية في جدة',
+    };
+}
+
 function head_html(array $page, ?string $canonicalPath = null): string {
     $cfg = site_config();
     $canonicalPath ??= $page['slug'] ?? '/';
     $canonical = absolute_url($canonicalPath);
     $robots = $cfg['review_mode'] ? 'noindex,nofollow' : 'index,follow,max-image-preview:large';
     $schema = json_encode(page_schema($page), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $hero = hero_image_for_page($page);
     $gtmHead = '';
     if ($cfg['gtm_id'] !== '') {
         $id = e($cfg['gtm_id']);
@@ -20,9 +41,12 @@ function head_html(array $page, ?string $canonicalPath = null): string {
         . '<meta property="og:type" content="website"><meta property="og:locale" content="ar_SA">'
         . '<meta property="og:site_name" content="' . e(BRAND_NAME_AR) . '"><meta property="og:title" content="' . e($page['title'] ?? BRAND_NAME_AR) . '">'
         . '<meta property="og:description" content="' . e($page['description'] ?? '') . '"><meta property="og:url" content="' . e($canonical) . '">'
+        . '<meta property="og:image" content="' . e(absolute_url($hero)) . '">'
         . '<meta name="theme-color" content="#29332B">'
         . '<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">'
+        . '<link rel="preload" href="' . e($hero) . '" as="image" type="image/webp" fetchpriority="high">'
         . '<link rel="preload" href="/assets/css/site.css?v=' . e(BUILD_ID) . '" as="style"><link rel="stylesheet" href="/assets/css/site.css?v=' . e(BUILD_ID) . '">'
+        . '<link rel="stylesheet" href="/assets/css/luxury.css?v=' . e(BUILD_ID) . '">'
         . $gtmHead
         . '<script type="application/ld+json">' . $schema . '</script>'
         . '</head>';
@@ -39,9 +63,9 @@ function header_html(): string {
     return '<header class="site-header"><div class="container header-row">'
         . '<a class="brand" href="/" aria-label="العودة إلى الرئيسية"><img src="/assets/img/enkaf-logo-white.png" width="240" height="51" alt="إنكاف للمحاماة والاستشارات القانونية"></a>'
         . '<nav class="desktop-nav" aria-label="التنقل الرئيسي">'
-        . '<a href="/محامي-شركات-وتأسيس-شركات/">الشركات</a><a href="/قضايا-تجارية-وتحصيل-ديون/">القضايا التجارية</a><a href="/تسجيل-علامة-تجارية-والملكية-الفكرية/">العلامات</a><a href="/محامي-عقاري-وتوثيق-عقود/">العقار</a>'
+        . '<a href="/محامي-واستشارات-قانونية/">الاستشارات</a><a href="/محامي-شركات-وتأسيس-شركات/">الشركات</a><a href="/قضايا-تجارية-وتحصيل-ديون/">القضايا التجارية</a><a href="/تسجيل-علامة-تجارية-والملكية-الفكرية/">الملكية الفكرية</a><a href="/محامي-عقاري-وتوثيق-عقود/">العقار</a>'
         . '</nav>'
-        . '<a class="header-phone" href="tel:' . e($cfg['phone_e164']) . '" data-event="click_call">' . icon_svg('phone') . '<span><bdi dir="ltr">' . e($cfg['phone_display']) . '</bdi></span></a>'
+        . '<div class="header-actions"><span class="header-location">جدة</span><a class="header-phone" href="tel:' . e($cfg['phone_e164']) . '" data-event="click_call">' . icon_svg('phone') . '<span><bdi dir="ltr">' . e($cfg['phone_display']) . '</bdi></span></a></div>'
         . '</div></header>';
 }
 
@@ -55,19 +79,22 @@ function form_html(array $page): string {
         $options .= '<option value="' . e($key) . '"' . $selected . '>' . e($services[$key]) . '</option>';
     }
     $hidden = '';
-    foreach (['landing_path','landing_url','utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','gbraid','wbraid','ttclid','fbclid','referrer','first_landing_url','session_id'] as $field) {
-        $hidden .= '<input type="hidden" name="' . $field . '">';
-    }
+    $hiddenFields = [
+        'landing_path','landing_url','utm_source','utm_medium','utm_campaign','utm_term','utm_content',
+        'gclid','gbraid','wbraid','ttclid','fbclid','campaignid','adgroupid','creative','keyword','matchtype',
+        'device','network','targetid','loc_physical_ms','gad_source','gad_campaignid','referrer','first_landing_url','session_id'
+    ];
+    foreach ($hiddenFields as $field) $hidden .= '<input type="hidden" name="' . $field . '">';
     return '<aside class="lead-card" id="form" aria-labelledby="formTitle">'
-        . '<div class="form-kicker">طلب تواصل قانوني</div><h2 id="formTitle">' . e($page['form_title']) . '</h2>'
-        . '<p class="form-intro">بيانات أساسية فقط. بعد حفظ الطلب يتواصل معك الفريق لفهم التفاصيل وتحديد الخطوة التالية.</p>'
-        . '<form id="leadForm" novalidate>'
+        . '<div class="form-kicker">تواصل مع إنكاف</div><h2 id="formTitle">' . e($page['form_title']) . '</h2>'
+        . '<p class="form-intro">اترك اسمك ورقم التواصل. نراجع الطلب ونتواصل معك بالطريقة المناسبة.</p>'
+        . '<form id="leadForm" autocomplete="on" novalidate>'
         . '<input type="hidden" name="landing_page_id" value="' . e($page['id']) . '">' . $hidden
         . '<div class="honeypot" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>'
-        . '<div class="field"><label for="full_name">الاسم</label><input id="full_name" name="full_name" autocomplete="name" minlength="2" maxlength="100" required placeholder="اكتب اسمك"><small class="field-error" data-error-for="full_name"></small></div>'
-        . '<div class="field"><label for="phone">رقم الجوال</label><input id="phone" name="phone" class="ltr-input" type="tel" inputmode="tel" autocomplete="tel" required placeholder="05xxxxxxxx" dir="ltr"><small class="field-error" data-error-for="phone"></small></div>'
-        . '<div class="field"><label for="service">نوع الخدمة القانونية</label><select id="service" name="service" required>' . $options . '</select><small class="field-error" data-error-for="service"></small></div>'
-        . '<label class="consent"><input type="checkbox" name="privacy_consent" value="1" required><span>أوافق على معالجة بياناتي للتواصل بخصوص الطلب وفق <a href="/سياسة-الخصوصية/" target="_blank" rel="noopener">سياسة الخصوصية</a>.</span></label><small class="field-error consent-error" data-error-for="privacy_consent"></small>'
+        . '<div class="field"><label for="full_name">الاسم</label><input id="full_name" name="full_name" autocomplete="name" minlength="2" maxlength="100" required placeholder="الاسم"><small class="field-error" data-error-for="full_name"></small></div>'
+        . '<div class="field"><label for="phone">رقم التواصل</label><input id="phone" name="phone" class="ltr-input" type="tel" inputmode="tel" autocomplete="tel" required placeholder="اكتب رقمك بالطريقة المعتادة" dir="ltr"><small class="field-error" data-error-for="phone"></small></div>'
+        . '<div class="field"><label for="service">الخدمة</label><select id="service" name="service" required>' . $options . '</select><small class="field-error" data-error-for="service"></small></div>'
+        . '<label class="consent"><input type="checkbox" name="privacy_consent" value="1" required><span>أوافق على استخدام بياناتي للتواصل بخصوص الطلب وفق <a href="/سياسة-الخصوصية/" target="_blank" rel="noopener">سياسة الخصوصية</a>.</span></label><small class="field-error consent-error" data-error-for="privacy_consent"></small>'
         . '<button class="btn btn-primary btn-block" type="submit"><span>' . e($page['form_cta']) . '</span>' . icon_svg('arrow') . '</button>'
         . '<div class="form-status" id="formStatus" role="status" aria-live="polite"></div>'
         . '</form></aside>';
@@ -75,10 +102,10 @@ function form_html(array $page): string {
 
 function trust_strip(): string {
     $items = [
-        ['shield','النزاهة والوضوح','تعامل مهني وشفاف'],
-        ['scale','حلول قانونية عملية','فهم الحالة قبل اختيار المسار'],
-        ['document','صياغة دقيقة','لغة واضحة وتفاصيل منظمة'],
-        ['briefcase','تركيز على العميل','الخدمة تُبنى حول الهدف القانوني'],
+        ['briefcase','فريق قانوني','تخصصات متعددة داخل المكتب'],
+        ['building','مكتب جدة','اجتماعات حضورية بخصوصية عالية'],
+        ['document','مرونة رقمية','اجتماعات ومتابعة عن بُعد'],
+        ['shield','أفراد وشركات','خدمة قانونية حسب طبيعة الملف'],
     ];
     $html = '<section class="trust-strip"><div class="container trust-grid">';
     foreach ($items as [$icon,$title,$text]) {
@@ -103,16 +130,16 @@ function scope_cards(array $cards): string {
     $icons = ['briefcase','document','scale','building'];
     $html = '<div class="scope-grid">';
     foreach ($cards as $i => $card) {
-        $html .= '<article class="scope-card"><span class="icon-box">' . icon_svg($icons[$i % count($icons)]) . '</span><h3>' . e($card[0]) . '</h3><p>' . e($card[1]) . '</p></article>';
+        $html .= '<article class="scope-card"><span class="scope-index">0' . ($i + 1) . '</span><span class="icon-box">' . icon_svg($icons[$i % count($icons)]) . '</span><h3>' . e($card[0]) . '</h3><p>' . e($card[1]) . '</p></article>';
     }
     return $html . '</div>';
 }
 
 function process_section(): string {
     $steps = [
-        ['01','أرسل بياناتك الأساسية','الاسم والجوال ونوع الخدمة؛ بدون تحميل مستندات حساسة في الخطوة الأولى.'],
-        ['02','نراجع نوع الطلب','نحدد نطاق الخدمة والمعلومات أو المستندات التي نحتاجها لفهم الحالة.'],
-        ['03','نوضح الخطوة التالية','يتواصل معك الفريق لتوضيح المسار القانوني الممكن ونطاق العمل المناسب.'],
+        ['01','نبدأ من المطلوب','ترسل بيانات التواصل ونوع الخدمة، بدون تفاصيل مرهقة في البداية.'],
+        ['02','الفريق يراجع الملف','نحدد المحامي المناسب وما نحتاجه من معلومات أو مستندات.'],
+        ['03','نرتب التواصل','حضوريًا في جدة أو عن بُعد، ثم نوضح نطاق العمل والخطوة التالية.'],
     ];
     $html = '<div class="steps-grid">';
     foreach ($steps as [$n,$title,$text]) {
@@ -129,10 +156,31 @@ function faq_html(array $faq): string {
     return $html . '</div>';
 }
 
+function office_experience_section(): string {
+    return '<section class="office-story"><div class="container office-story-grid">'
+        . '<figure class="office-photo office-photo-main"><img src="/assets/img/office/office-lounge.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="مكتب إنكاف في جدة"></figure>'
+        . '<div class="office-story-copy"><span class="section-label">من جدة</span><h2>مكتب قانوني بهدوء يليق بالقرارات المهمة.</h2><p>صممنا تجربة إنكاف لتكون واضحة ومريحة من أول تواصل: استقبال هادئ، خصوصية في الاجتماعات، وفريق يتعامل مع الملف بجدية من غير تعقيد في التواصل.</p><div class="office-facts"><span>هوية سعودية</span><span>خصوصية في الاجتماعات</span><span>تجربة مهنية من أول زيارة</span></div></div>'
+        . '</div></section>';
+}
+
+function team_section(): string {
+    return '<section class="team-section"><div class="container team-grid">'
+        . '<div class="team-copy"><span class="section-label light">فريق إنكاف</span><h2>الملف يذهب إلى التخصص المناسب، لا إلى قالب واحد.</h2><p>يضم المكتب أكثر من محامٍ، ويُوزع العمل بحسب نوع القضية أو المعاملة. الهدف أن يصل الملف إلى الخبرة الأقرب له، مع بقاء التواصل منظمًا وواضحًا.</p><a class="text-link" href="#form">تواصل مع الفريق' . icon_svg('arrow') . '</a></div>'
+        . '<figure class="team-photo"><img src="/assets/img/office/team-work.webp" width="1600" height="900" loading="lazy" decoding="async" alt="محامٍ من فريق إنكاف أثناء العمل"></figure>'
+        . '</div></section>';
+}
+
+function digital_section(): string {
+    return '<section class="digital-section"><div class="container digital-grid">'
+        . '<figure class="digital-photo"><img src="/assets/img/office/digital-office.webp" width="788" height="1400" loading="lazy" decoding="async" alt="مساحة عمل رقمية في مكتب إنكاف"></figure>'
+        . '<div class="digital-copy"><span class="section-label">مرونة في التواصل</span><h2>قريبون منك، حتى لو لم تكن في المكتب.</h2><p>يمكن ترتيب الاجتماعات عن بُعد، ومراجعة المستندات ومتابعة التواصل رقميًا عندما يكون ذلك أنسب لك وللفريق.</p><div class="digital-list"><div><strong>اجتماعات مرئية</strong><span>للنقاش والمتابعة بدون زيارة في كل مرة.</span></div><div><strong>تبادل المستندات</strong><span>تنظيم الملفات والمراجعات بطريقة أسهل وأسرع.</span></div><div><strong>متابعة مرنة</strong><span>حضوري أو رقمي حسب طبيعة الطلب.</span></div></div></div>'
+        . '</div></section>';
+}
+
 function footer_html(): string {
     $cfg = site_config();
     return '<footer class="site-footer"><div class="container footer-grid">'
-        . '<div class="footer-brand"><img src="/assets/img/enkaf-logo-white.png" width="240" height="51" alt="إنكاف"><p>حلول قانونية عملية للأفراد والشركات في المملكة العربية السعودية.</p></div>'
+        . '<div class="footer-brand"><img src="/assets/img/enkaf-logo-white.png" width="240" height="51" alt="إنكاف"><p>إنكاف للمحاماة والاستشارات القانونية. فريق قانوني في جدة يخدم الأفراد والشركات حضوريًا وعن بُعد.</p></div>'
         . '<div><h3>الخدمات</h3><a href="/محامي-واستشارات-قانونية/">الاستشارات القانونية</a><a href="/محامي-شركات-وتأسيس-شركات/">الشركات والعقود</a><a href="/قضايا-تجارية-وتحصيل-ديون/">القضايا التجارية</a><a href="/تسجيل-علامة-تجارية-والملكية-الفكرية/">العلامات والملكية الفكرية</a><a href="/محامي-عقاري-وتوثيق-عقود/">الخدمات العقارية</a></div>'
         . '<div><h3>التواصل</h3><a href="tel:' . e($cfg['phone_e164']) . '" data-event="click_call">' . icon_svg('phone') . '<bdi dir="ltr">' . e($cfg['phone_display']) . '</bdi></a><a href="mailto:' . e($cfg['email_primary']) . '">' . icon_svg('mail') . e($cfg['email_primary']) . '</a><a href="mailto:' . e($cfg['email_work']) . '">' . icon_svg('mail') . e($cfg['email_work']) . '</a><a href="/سياسة-الخصوصية/">سياسة الخصوصية</a></div>'
         . '</div><div class="container footer-bottom"><span>© ' . date('Y') . ' إنكاف. جميع الحقوق محفوظة.</span><span>المعلومات المنشورة عامة ولا تمثل ضمانًا لنتيجة قانونية أو قضائية.</span></div></footer>';
@@ -140,22 +188,25 @@ function footer_html(): string {
 
 function floating_actions(): string {
     $cfg = site_config();
-    $wa = 'https://wa.me/' . $cfg['whatsapp'] . '?text=' . rawurlencode('مرحبًا إنكاف، أرغب في استشارة قانونية.');
+    $wa = 'https://wa.me/' . $cfg['whatsapp'] . '?text=' . rawurlencode('مرحبًا إنكاف، أرغب في التواصل بخصوص خدمة قانونية.');
     return '<div class="floating-actions" aria-label="تواصل سريع"><a class="float-btn wa" href="' . e($wa) . '" target="_blank" rel="noopener" data-event="click_whatsapp" aria-label="تواصل عبر واتساب">' . icon_svg('whatsapp') . '<span>واتساب</span></a><a class="float-btn call" href="tel:' . e($cfg['phone_e164']) . '" data-event="click_call" aria-label="اتصال">' . icon_svg('phone') . '<span>اتصال</span></a></div>';
 }
 
 function page_html(array $page): string {
     $chips = '';
     foreach ($page['chips'] as $chip) $chips .= '<span class="hero-chip">' . icon_svg('check') . e($chip) . '</span>';
+    $hero = hero_image_for_page($page);
     $body = '<body class="theme-' . e($page['theme']) . '">' . gtm_body_fallback() . header_html()
-        . '<main><section class="hero"><div class="hero-art" aria-hidden="true"><span></span><span></span><span></span></div><div class="container hero-grid"><div class="hero-copy"><span class="eyebrow">' . e($page['eyebrow']) . '</span><h1>' . e($page['h1']) . '</h1><p class="hero-intro">' . e($page['intro']) . '</p><div class="hero-chips">' . $chips . '</div><div class="hero-proof">' . icon_svg('shield') . '<span>نراجع كل طلب وفق طبيعته ومستنداته ونوضح نطاق الخدمة قبل بدء العمل.</span></div></div>' . form_html($page) . '</div></section>'
+        . '<main><section class="hero"><div class="hero-media" aria-hidden="true"><img src="' . e($hero) . '" width="1920" height="1080" fetchpriority="high" decoding="async" alt=""></div><div class="hero-shade" aria-hidden="true"></div><div class="container hero-grid"><div class="hero-copy"><span class="eyebrow">' . e($page['eyebrow']) . '</span><h1>' . e($page['h1']) . '</h1><p class="hero-intro">' . e($page['intro']) . '</p><div class="hero-chips">' . $chips . '</div><div class="hero-meta"><span>جدة</span><span>حضوري وعن بُعد</span><span>للأفراد والشركات</span></div></div>' . form_html($page) . '</div></section>'
         . trust_strip()
-        . '<section class="section section-paper"><div class="container"><div class="section-heading"><span class="eyebrow dark">نطاق الخدمة</span><h2>' . e($page['section_title']) . '</h2><p>' . e($page['section_intro']) . '</p></div>' . scope_cards($page['scope_cards']) . '</div></section>'
-        . '<section class="section section-green"><div class="container"><div class="section-heading light"><span class="eyebrow">طريقة العمل</span><h2>من الطلب الأولي إلى الخطوة القانونية التالية</h2><p>نحافظ على الخطوة الأولى بسيطة، ثم نجمع التفاصيل اللازمة عندما يتضح نطاق الحالة.</p></div>' . process_section() . '</div></section>'
-        . '<section class="section section-sand"><div class="container split-values"><div><span class="eyebrow dark">نهج إنكاف</span><h2>واضح، مهني، وموجّه للحل</h2><p>تعتمد شخصية إنكاف على الخبرة القانونية مع لغة مفهومة، والالتزام بالنزاهة والجودة والتركيز على احتياج العميل دون مبالغة في الوعود.</p></div><div class="values-list"><div><strong>النزاهة</strong><span>وضوح وشفافية في التعامل.</span></div><div><strong>التميز</strong><span>دقة واهتمام بجودة الحل القانوني.</span></div><div><strong>الابتكار</strong><span>تفكير عملي في التحديات المعقدة.</span></div><div><strong>التركيز على العميل</strong><span>فهم الهدف قبل تحديد المسار.</span></div></div></div></section>'
-        . '<section class="section section-paper"><div class="container"><div class="section-heading"><span class="eyebrow dark">الأسئلة الشائعة</span><h2>أسئلة قبل إرسال الطلب</h2></div>' . faq_html($page['faq']) . '</div></section>'
-        . '<section class="section section-links"><div class="container"><div class="section-heading compact"><span class="eyebrow dark">خدمات مرتبطة</span><h2>استكشف خدمات إنكاف القانونية</h2></div>' . service_navigation($page['slug']) . '</div></section>'
-        . '<section class="final-cta"><div class="container final-cta-grid"><div><span class="eyebrow">ابدأ الآن</span><h2>أرسل طلبك القانوني في أقل من دقيقة</h2><p>ابدأ بالبيانات الأساسية، وسيتم تحديد التفاصيل المطلوبة بعد فهم نوع الخدمة.</p></div><a class="btn btn-paper" href="#form">انتقل إلى النموذج' . icon_svg('arrow') . '</a></div></section></main>'
+        . '<section class="section section-paper expertise-section"><div class="container"><div class="section-heading"><span class="section-label">نطاق الخدمة</span><h2>' . e($page['section_title']) . '</h2><p>' . e($page['section_intro']) . '</p></div>' . scope_cards($page['scope_cards']) . '</div></section>'
+        . office_experience_section()
+        . team_section()
+        . digital_section()
+        . '<section class="section section-green process-wrap"><div class="container"><div class="section-heading light"><span class="section-label light">طريقة العمل</span><h2>بداية بسيطة. متابعة واضحة.</h2><p>نرتب الخطوة الأولى بسرعة، ثم ندخل في التفاصيل التي يحتاجها الملف فقط.</p></div>' . process_section() . '</div></section>'
+        . '<section class="section section-paper faq-section"><div class="container"><div class="section-heading"><span class="section-label">الأسئلة الشائعة</span><h2>قبل أن تتواصل معنا</h2></div>' . faq_html($page['faq']) . '</div></section>'
+        . '<section class="section section-links"><div class="container"><div class="section-heading compact"><span class="section-label">خدمات أخرى</span><h2>خدمات إنكاف القانونية</h2></div>' . service_navigation($page['slug']) . '</div></section>'
+        . '<section class="final-cta"><div class="container final-cta-grid"><div><span class="section-label light">ابدأ الآن</span><h2>خلّنا نبدأ من المطلوب.</h2><p>اترك بيانات التواصل ونوع الخدمة، والفريق يرتب معك الخطوة التالية.</p></div><a class="btn btn-paper" href="#form">طلب تواصل' . icon_svg('arrow') . '</a></div></section></main>'
         . footer_html() . floating_actions() . '<script src="/assets/js/site.js?v=' . e(BUILD_ID) . '" defer></script></body>';
     return '<!doctype html><html lang="ar" dir="rtl">' . head_html($page) . $body . '</html>';
 }
@@ -169,7 +220,7 @@ function privacy_html(): string {
     ];
     $cfg = site_config();
     $body = '<body class="theme-legal">' . gtm_body_fallback() . header_html()
-        . '<main class="legal-page"><section class="legal-hero"><div class="container"><span class="eyebrow">الخصوصية والبيانات</span><h1>سياسة الخصوصية</h1><p>الإصدار: ' . e(PRIVACY_VERSION) . '</p></div></section><section class="section section-paper"><div class="container legal-copy">'
+        . '<main class="legal-page"><section class="legal-hero"><div class="container"><span class="section-label light">الخصوصية والبيانات</span><h1>سياسة الخصوصية</h1><p>الإصدار: ' . e(PRIVACY_VERSION) . '</p></div></section><section class="section section-paper"><div class="container legal-copy">'
         . '<h2>البيانات التي نجمعها</h2><p>عند إرسال نموذج التواصل، نجمع الاسم ورقم الجوال ونوع الخدمة القانونية، إضافة إلى بيانات مصدر الزيارة والحملة ومعرّفات النقر عند توفرها، ومعلومات تقنية محدودة تساعد على تشغيل الخدمة ومنع إساءة الاستخدام.</p>'
         . '<h2>الغرض من الاستخدام</h2><p>نستخدم البيانات لفهم الطلب، التواصل معك، تحديد نوع الخدمة، إدارة ومتابعة الطلب، تحسين جودة تجربة الموقع وقياس مصادر الحملات.</p>'
         . '<h2>الموافقة</h2><p>لا يتم إرسال النموذج قبل تأكيد الموافقة على هذه السياسة. يتم حفظ حالة الموافقة وتوقيتها وإصدار السياسة مع سجل الطلب.</p>'
@@ -193,7 +244,7 @@ function thank_you_html(): string {
     $cfg = site_config();
     $waBase = 'https://wa.me/' . $cfg['whatsapp'];
     $body = '<body class="theme-thanks">' . gtm_body_fallback() . header_html()
-        . '<main class="thanks-page"><section class="thanks-card"><span class="success-mark">' . icon_svg('check') . '</span><span class="eyebrow dark">تم حفظ الطلب</span><h1>شكرًا لك، تم استلام طلبك</h1><p>سيتم مراجعة نوع الخدمة والتواصل معك لفهم التفاصيل وتحديد الخطوة التالية.</p>'
+        . '<main class="thanks-page"><section class="thanks-card"><span class="success-mark">' . icon_svg('check') . '</span><span class="section-label">تم حفظ الطلب</span><h1>وصلنا طلبك</h1><p>الفريق سيراجع نوع الخدمة ويتواصل معك لتحديد الخطوة التالية.</p>'
         . ($ref ? '<div class="lead-ref">رقم الطلب: <bdi dir="ltr">' . e($ref) . '</bdi></div>' : '')
         . '<div class="thanks-actions"><a class="btn btn-primary" id="thankYouWhatsapp" href="' . e($waBase) . '" target="_blank" rel="noopener" data-event="whatsapp_after_form">متابعة عبر واتساب' . icon_svg('whatsapp') . '</a><a class="btn btn-outline" href="/">العودة للرئيسية</a></div></section></main>'
         . footer_html() . '<script>window.ENKAF_THANK_YOU_REF=' . json_encode($ref, JSON_UNESCAPED_UNICODE) . ';window.ENKAF_WA=' . json_encode($cfg['whatsapp']) . ';</script><script src="/assets/js/site.js?v=' . e(BUILD_ID) . '" defer></script></body>';
@@ -207,6 +258,6 @@ function not_found_html(): string {
         'description' => 'الصفحة المطلوبة غير موجودة.',
         'faq' => [],
     ];
-    $body = '<body class="theme-legal">' . header_html() . '<main class="thanks-page"><section class="thanks-card"><span class="eyebrow dark">404</span><h1>الصفحة غير موجودة</h1><p>قد يكون الرابط تغير أو تمت كتابة العنوان بصورة غير صحيحة.</p><div class="thanks-actions"><a class="btn btn-primary" href="/">العودة للرئيسية</a><a class="btn btn-outline" href="/محامي-واستشارات-قانونية/">طلب استشارة قانونية</a></div></section></main>' . footer_html() . '</body>';
+    $body = '<body class="theme-legal">' . header_html() . '<main class="thanks-page"><section class="thanks-card"><span class="section-label">404</span><h1>الصفحة غير موجودة</h1><p>قد يكون الرابط تغير أو تمت كتابة العنوان بصورة غير صحيحة.</p><div class="thanks-actions"><a class="btn btn-primary" href="/">العودة للرئيسية</a><a class="btn btn-outline" href="/محامي-واستشارات-قانونية/">طلب استشارة قانونية</a></div></section></main>' . footer_html() . '</body>';
     return '<!doctype html><html lang="ar" dir="rtl">' . head_html($page) . $body . '</html>';
 }
