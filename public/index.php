@@ -10,12 +10,7 @@ $cfg = site_config();
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-$csp = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://www.googletagmanager.com 'unsafe-inline'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com; frame-src https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
-$isHttps = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off')
-    || ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443)
-    || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
-if ($isHttps) $csp .= '; upgrade-insecure-requests';
-header('Content-Security-Policy: ' . $csp);
+header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://www.googletagmanager.com 'unsafe-inline'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com; frame-src https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
 if ($cfg['review_mode']) header('X-Robots-Tag: noindex, nofollow');
 
 $rawPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
@@ -31,7 +26,7 @@ if ($path === '/healthz/') {
         'ok' => true,
         'service' => 'enkaf-landing-site',
         'build' => BUILD_ID,
-        'design' => 'luxury-office-v2',
+        'design' => 'luxury-agency-v3',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
     ], JSON_UNESCAPED_SLASHES);
