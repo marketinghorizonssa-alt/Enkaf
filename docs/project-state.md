@@ -19,6 +19,13 @@
 - LP04 /تسجيل-علامة-تجارية-والملكية-الفكرية/
 - LP05 /محامي-عقاري-وتوثيق-عقود/
 
+## Performance objective
+- Primary objective is paid-search conversion performance and strong Google relevance/quality, not a visual showcase.
+- Keep the first-step form in the first viewport on campaign landings.
+- Keep pages fast and lightweight: no autoplay video, slider, heavy animation framework, or unnecessary third-party visual library.
+- Maintain keyword/ad/page alignment, unique metadata/H1/canonical, crawlable service copy, FAQ schema, robots and sitemap.
+- Call and WhatsApp remain separate secondary conversion paths.
+
 ## Form / lead schema
 Visible fields:
 - full_name
@@ -62,71 +69,64 @@ Important limitation:
 - Visual/conversion refresh: PR #8
 - Luxury office redesign: PR #9
 - Production entrypoint fix: PR #10
-- Current agency/luxury Saudi redesign: PR #11
-- PR #11 merged on 2026-08-20.
-- Reviewed production website release commit: 6c1c2e08b75574e00830495b4a02bedc0a8cb079
+- Luxury Saudi redesign: PR #11
+- Conversion-first V4 visual system: PR #12
+- PR #12 merged on 2026-08-20.
+- Current reviewed production release: 73f8352e006afc6b5a8599fde0d36cdb9436a124
 - Production deployment script: scripts/deploy-hostinger.sh
 - Preview deployment script: scripts/deploy-hositee-preview.sh
 
-## Current production design - Luxury Agency V3
-User rejected the prior production presentation as too geometric, sparse, visually weak, inconsistent in language, and not sufficiently Saudi/premium.
+## V4 design direction
+User supplied https://atheer-law.hositee.com/lawyer-jeddah as a visual reference, while explicitly preserving ENKAF performance/conversion requirements.
 
-V3 changes:
-- Rebuilt the visual system around a smoother premium Saudi legal-firm presentation.
-- Uses ENKAF green, parchment, sandstone and umber rather than a near-single-color presentation.
-- Uses the real ENKAF office photography already stored in the repository as lightweight local photo CSS assets.
-- Removes the legacy luxury/refresh stylesheet dependencies from active page rendering.
-- Uses formal Saudi legal/business Arabic in customer-facing copy.
-- Removes internal implementation-style phrasing and template/AI-sounding copy from the main experience.
-- Keeps the first-step form short and above the fold.
-- Keeps call and WhatsApp as separate secondary paths.
-- Keeps the existing durable lead storage and attribution logic.
-- Build ID: enkaf-2026-08-20-luxury-v3
-- Runtime design marker: luxury-agency-v3
+Reference patterns inspected from the existing hositee server:
+- Strong dark legal hero and high-contrast premium accent treatment.
+- Clear service hierarchy and repeated conversion paths.
+- Fixed/floating contact paths and strong legal-service information architecture.
+- The reference uses autoplay/hero video and more decorative effects; ENKAF deliberately does not copy those performance-heavy choices.
 
-## Production deployment - 2026-08-20
+V4 implementation:
+- Refined the ENKAF interface to a smoother premium Saudi legal presentation rather than a harsh geometric layout.
+- Keeps ENKAF green, parchment, sandstone, umber and burnt-umber palette.
+- Preserves formal Saudi legal/business Arabic already introduced in V3.
+- Keeps form adjacent to hero copy and visible in the first screen on desktop, with mobile one-column conversion flow.
+- Uses the real ENKAF office photo layers already stored locally in the repository as embedded optimized WebP CSS assets.
+- Explicitly forces hero/office/team photo layers to render as cover backgrounds with visible opacity and safe fallbacks.
+- Does not add a video hero, external image CDN, external UI library, or heavy animation bundle.
+- Keeps the existing form schema, attribution, durable lead flow, call event and WhatsApp event unchanged.
+
+## Production deployment - V4
 - Hostinger username: u128565677
 - Production root: /home/u128565677/domains/enkaf.sa/public_html
-- Exact deployed website release: 6c1c2e08b75574e00830495b4a02bedc0a8cb079
-- Hostinger deployment read-back returned: ENKAF_DEPLOY_ALREADY_OK commit=6c1c2e08b75574e00830495b4a02bedc0a8cb079
-- The deployment script itself validates the local PHP runtime and release marker before reporting a successful deployment.
-- Production cache purge was requested after V3 deployment.
-- Cacheless/development mode is enabled temporarily while visual QA continues.
-- Temporary deployment/QA cron jobs were deleted; latest verified cron list is empty.
+- Exact deployed release: 73f8352e006afc6b5a8599fde0d36cdb9436a124
+- Verified deployment output:
+  - ENKAF_SERVER_VALIDATE_OK
+  - ENKAF_DEPLOY_OK commit=73f8352e006afc6b5a8599fde0d36cdb9436a124 review_mode=false
+- Deployment backup: /home/u128565677/domains/enkaf.sa/enkaf-backups/before-73f8352e006a-20260820-140921.tar.gz
+- Production deployment crons were requested for deletion after the verified deploy.
 
-## Production asset read-back
-Hostinger filesystem read-back after deployment:
-- public/assets/css/site.css: 18,905 bytes
-- public/assets/css/photo-hero.css: 20,023 bytes
-- public/assets/css/photo-office.css: 19,989 bytes
-- public/assets/css/photo-team.css: 20,022 bytes
-- Total checked CSS/photo payload: 78,939 bytes
+## Photo source
+- User-provided real office Drive folder: https://drive.google.com/drive/folders/18Baielx_kbTrgKTNbQwMJH2fQ6OQRIqH
+- Folder contains real ENKAF office photography in HEIC/JPG formats.
+- Representative images were inspected from the folder and confirm a dark, premium Saudi office environment with legal books, executive desks, Saudi identity cues and meeting areas.
+- Current production V4 still uses the optimized real-office WebP photo layers already embedded in the repository; newer Drive JPG/HEIC originals are source material for future curated replacements and are not claimed as separately published binary files.
 
-The photo CSS assets contain the optimized local office imagery used by the V3 layout.
-
-## DNS / domain state
-The user obtained DNET DNS access and configured:
-- A record for enkaf.sa -> 145.223.36.55, TTL 300
-- CNAME for www.enkaf.sa -> enkaf.sa, TTL 300
-- Existing Hostinger mail MX/SPF/DMARC/DKIM records were preserved.
-- DNET nameservers remain authoritative; nameservers were not migrated to Hostinger.
-- The user's browser successfully reached the Hostinger site over the production domain after the DNS change.
-
-## HTTPS / SSL incident
-- HTTPS is NOT yet cleared as healthy.
-- A server-side curl test from the Hostinger account returned TLS error: `curl: (35) ... tlsv1 alert internal error` for https://enkaf.sa/.
-- This is separate from the V3 site code and asset deployment.
-- Do not force an HTTP->HTTPS redirect until a valid certificate is actually serving without warnings/errors.
-- Current application CSP intentionally does not force `upgrade-insecure-requests` while certificate issuance is unresolved, so HTTP rendering does not intentionally break CSS/images during the transition.
-- SSL/certificate activation must be verified in Hostinger/hPanel or via a valid external TLS handshake before the production domain is treated as launch-ready.
+## DNS / SSL
+- DNET authoritative DNS remains in place.
+- A record: enkaf.sa -> 145.223.36.55, TTL 300.
+- CNAME: www.enkaf.sa -> enkaf.sa, TTL 300.
+- Existing Hostinger MX/SPF/DMARC/DKIM records were preserved.
+- User provided current Hostinger hPanel screenshot on 2026-08-20 showing Lifetime SSL for enkaf.sa as Active.
+- Old subdomains mz.enkaf.sa, profile.enkaf.sa and test.enkaf.sa show failed SSL entries but are not the production root site.
+- Final live HTTPS/browser redirect verification is still required before Search Console completion.
 
 ## Legacy WordPress archive
-- Old WordPress is archival only and is not production source.
-- Archive: /home/u128565677/legacy-archives/enkaf/enkaf-wordpress-legacy-20260818-192401.zip
+- Hostinger still labels the website metadata as website_type=wordpress because the site was originally created as WordPress.
+- WordPress is not the serving production source.
+- Old WordPress archive: /home/u128565677/legacy-archives/enkaf/enkaf-wordpress-legacy-20260818-192401.zip
 - Archive size: 688M
 - SHA-256: 1875f740a7fa9c09ddd97202cd83853ecf9ebc0dd6509d6fdd4e3c59a8c3b5a7
-- Database dump is included.
-- ZIP integrity previously returned ZIP_TEST_OK.
+- Database dump is included; ZIP integrity previously returned ZIP_TEST_OK.
 
 ## Current tracking / Ads state
 - ENKAF GTM container: not created yet
@@ -134,7 +134,7 @@ The user obtained DNET DNS access and configured:
 - Google Ads conversions: not created yet
 - Search campaign: not created yet
 - Launch approval: not given
-- Campaigns must remain paused until live-domain SSL, browser/mobile QA, forms, tracking and final QA are complete and the user explicitly approves launch.
+- Campaigns must remain paused until live-domain HTTPS, browser/mobile QA, forms, tracking and final QA are complete and the user explicitly approves launch.
 
 ## Crawl / launch rules
 - Do not use enkaf.hositee.com as the final SEO/Search Console hostname.
