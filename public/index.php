@@ -25,8 +25,8 @@ if ($path === '/healthz/') {
     echo json_encode([
         'ok' => true,
         'service' => 'enkaf-landing-site',
-        'build' => BUILD_ID,
-        'design' => 'luxury-agency-v3',
+        'build' => BUILD_ID . '-v5-legal',
+        'design' => 'legal-conversion-v5',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
     ], JSON_UNESCAPED_SLASHES);
