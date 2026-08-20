@@ -14,10 +14,21 @@ fi
 for token in "/محامي-واستشارات-قانونية/" "/محامي-شركات-وتأسيس-شركات/" "/قضايا-تجارية-وتحصيل-ديون/" "/تسجيل-علامة-تجارية-والملكية-الفكرية/" "/محامي-عقاري-وتوثيق-عقود/"; do
   grep -Fq "$token" "$ROOT/app/config.php" || { echo "ERROR: missing route $token" >&2; exit 1; }
 done
+
 grep -Fq '0559556606' "$ROOT/app/config.php"
 grep -Fq 'Info@enkaf.sa' "$ROOT/app/config.php"
 grep -Fq 'ENKAF_REVIEW_MODE' "$ROOT/.env.example"
 grep -Fq 'lead-success' "$ROOT/public/assets/js/site.js"
 grep -Fq 'privacy_consent' "$ROOT/app/views.php"
+grep -Fq 'hero-photo-img' "$ROOT/app/views.php"
+
+required_assets=(
+  hero-home.webp hero-general.webp hero-corporate.webp hero-disputes.webp hero-ip.webp hero-realestate.webp
+  section-strategy.webp section-work.webp
+  motif-scale.svg motif-corporate.svg motif-disputes.svg motif-ip.svg motif-realestate.svg
+)
+for asset in "${required_assets[@]}"; do
+  [ -s "$ROOT/public/assets/img/$asset" ] || { echo "ERROR: missing required visual asset $asset" >&2; exit 1; }
+done
 
 echo 'ENKAF_LOCAL_VALIDATE_OK'
