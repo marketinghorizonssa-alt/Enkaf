@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/app/config.php';
 require_once dirname(__DIR__) . '/app/helpers.php';
 require_once dirname(__DIR__) . '/app/leads.php';
-require_once dirname(__DIR__) . '/app/views-v2.php';
+require_once dirname(__DIR__) . '/app/views.php';
 
 $cfg = site_config();
 header('X-Content-Type-Options: nosniff');
