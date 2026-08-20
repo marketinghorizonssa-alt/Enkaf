@@ -12,9 +12,11 @@
   function safeGet(storage, key) {
     try { return storage.getItem(key) || ''; } catch (_) { return ''; }
   }
+
   function safeSet(storage, key, value) {
     try { storage.setItem(key, value); } catch (_) {}
   }
+
   function sessionId() {
     let id = safeGet(sessionStorage, 'enkaf_session_id');
     if (!id) {
@@ -23,6 +25,7 @@
     }
     return id;
   }
+
   function captureAttribution() {
     const params = new URLSearchParams(location.search);
     attribKeys.forEach((key) => {
@@ -32,18 +35,12 @@
     if (!safeGet(sessionStorage, 'enkaf_first_landing_url')) safeSet(sessionStorage, 'enkaf_first_landing_url', location.href);
     if (!safeGet(sessionStorage, 'enkaf_referrer') && document.referrer) safeSet(sessionStorage, 'enkaf_referrer', document.referrer);
   }
+
   function asciiDigits(value) {
     const map = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9','۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9'};
     return String(value || '').replace(/[٠-٩۰-۹]/g, d => map[d] || d);
   }
-  function injectRefreshStyles() {
-    if (qs('link[data-enkaf-refresh]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/assets/css/refresh.css?v=20260819c';
-    link.dataset.enkafRefresh = '1';
-    document.head.appendChild(link);
-  }
+
   function ensureHiddenInputs(form) {
     attribKeys.forEach((key) => {
       if (qs(`[name="${key}"]`, form)) return;
@@ -53,74 +50,12 @@
       form.appendChild(input);
     });
   }
-  function pageHook() {
-    const cls = document.body.className;
-    if (cls.includes('theme-corporate')) return 'أسّس قرارك التجاري على أرض قانونية أوضح.';
-    if (cls.includes('theme-disputes')) return 'في النزاع، وضوح المسار من البداية يصنع فرقًا.';
-    if (cls.includes('theme-ip')) return 'احمِ اسمك وحقوقك الفكرية بخطوات منظمة.';
-    if (cls.includes('theme-realestate')) return 'العقد الواضح اليوم يقلّل مساحة النزاع غدًا.';
-    if (cls.includes('theme-general')) return 'قبل أي خطوة قانونية، خلّي موقفك أوضح.';
-    return 'ابدأ بفهم قانوني أوضح قبل القرار التالي.';
-  }
-  function enhanceVisualDesign() {
-    const heroCopy = qs('.hero-copy');
-    if (heroCopy && !qs('.hero-hookline', heroCopy)) {
-      const hook = document.createElement('div');
-      hook.className = 'hero-hookline';
-      hook.textContent = pageHook();
-      const h1 = qs('h1', heroCopy);
-      if (h1) heroCopy.insertBefore(hook, h1);
-    }
-    if (heroCopy && !qs('.hero-showcase', heroCopy)) {
-      const showcase = document.createElement('div');
-      showcase.className = 'hero-showcase';
-      showcase.setAttribute('aria-hidden', 'true');
-      showcase.innerHTML = `
-        <img src="/assets/img/enkaf-legal-visual.svg" width="820" height="420" alt="" decoding="async">
-        <div class="hero-showcase-badges">
-          <span class="hero-showcase-badge b1">فهم قانوني واضح</span>
-          <span class="hero-showcase-badge b2">للأفراد والشركات</span>
-          <span class="hero-showcase-badge b3">خطوة أولى سريعة</span>
-        </div>`;
-      heroCopy.appendChild(showcase);
-    }
 
-    const form = qs('#leadForm');
-    if (!form) return;
-    ensureHiddenInputs(form);
-    form.autocomplete = 'on';
-
-    const phone = qs('[name="phone"]', form);
-    if (phone) {
-      phone.placeholder = 'اكتب رقمك بأي صيغة';
-      phone.setAttribute('autocomplete', 'tel');
-      phone.setAttribute('inputmode', 'tel');
-      if (!qs('#phoneHelp', form)) {
-        const help = document.createElement('small');
-        help.id = 'phoneHelp';
-        help.className = 'phone-help';
-        help.textContent = 'اكتب الرقم بالطريقة المعتادة لديك؛ لا نطلب منك إضافة كود دولة أو صيغة محددة.';
-        const field = phone.closest('.field');
-        if (field) field.insertAdjacentElement('afterend', help);
-        phone.setAttribute('aria-describedby', 'phoneHelp');
-      }
-    }
-
-    const intro = qs('.form-intro');
-    if (intro && !qs('.form-speed-note')) {
-      const note = document.createElement('div');
-      note.className = 'form-speed-note';
-      note.innerHTML = '<span class="form-speed-icon">✓</span><span><strong>بيانات قليلة فقط.</strong> مصدر الإعلان والحملة ومعرّفات النقر تُحفظ تلقائيًا عند توفرها، والخدمة الأساسية محددة مسبقًا ويمكن تغييرها.</span>';
-      intro.insertAdjacentElement('afterend', note);
-    }
-  }
-
-  injectRefreshStyles();
   captureAttribution();
-  enhanceVisualDesign();
 
   const form = qs('#leadForm');
   if (form) {
+    ensureHiddenInputs(form);
     const status = qs('#formStatus', form);
     const button = qs('button[type="submit"]', form);
     const service = qs('[name="service"]', form);
@@ -129,8 +64,8 @@
     function dispatch(name, detail = {}) {
       document.dispatchEvent(new CustomEvent(`enkaf:${name}`, { detail }));
     }
+
     function fillHidden() {
-      ensureHiddenInputs(form);
       const map = {
         landing_path: location.pathname,
         landing_url: location.href.split('#')[0],
@@ -144,12 +79,14 @@
         if (input) input.value = value || '';
       });
     }
+
     function clearErrors() {
       qsa('.field-error', form).forEach(el => el.textContent = '');
       qsa('[aria-invalid="true"]', form).forEach(el => el.removeAttribute('aria-invalid'));
       status.textContent = '';
       status.classList.remove('error');
     }
+
     function showErrors(fields = {}) {
       let firstInvalid = null;
       Object.entries(fields).forEach(([key, message]) => {
@@ -163,6 +100,7 @@
       });
       if (firstInvalid && typeof firstInvalid.focus === 'function') firstInvalid.focus({ preventScroll: true });
     }
+
     function clientValidate() {
       const fields = {};
       const name = qs('[name="full_name"]', form).value.trim();
@@ -193,11 +131,13 @@
         status.classList.add('error');
         return;
       }
+
       const originalText = qs('span', button)?.textContent || 'إرسال الطلب';
       button.disabled = true;
       if (qs('span', button)) qs('span', button).textContent = 'جارٍ حفظ الطلب...';
       status.textContent = '';
       const formData = new FormData(form);
+
       try {
         const response = await fetch('/api/lead/', { method: 'POST', body: formData, headers: { 'Accept': 'application/json' } });
         const data = await response.json().catch(() => ({}));
@@ -230,7 +170,7 @@
   if (thankYouWhatsApp) {
     const ref = window.ENKAF_THANK_YOU_REF || safeGet(sessionStorage, 'enkaf_last_lead_ref');
     const service = safeGet(sessionStorage, 'enkaf_last_service_label');
-    const parts = ['مرحبًا إنكاف، أرسلت طلب استشارة عبر الموقع.'];
+    const parts = ['مرحبًا إنكاف، أرسلت طلب تواصل عبر الموقع.'];
     if (ref) parts.push(`رقم الطلب: ${ref}`);
     if (service) parts.push(`نوع الخدمة: ${service}`);
     thankYouWhatsApp.href = `https://wa.me/${window.ENKAF_WA || '966559556606'}?text=${encodeURIComponent(parts.join('\n'))}`;
