@@ -17,6 +17,20 @@ BACKUP="${BACKUP_ROOT}/before-${COMMIT:0:12}-${STAMP}.tar.gz"
 LOCK="${DOMAIN_ROOT}/.enkaf-deploy.lock"
 HAD_PUBLIC=0
 HAD_APP=0
+REQUIRED_ASSETS=(
+  hero-home.webp hero-general.webp hero-corporate.webp hero-disputes.webp hero-ip.webp hero-realestate.webp
+  section-strategy.webp section-work.webp
+  motif-scale.svg motif-corporate.svg motif-disputes.svg motif-ip.svg motif-realestate.svg
+)
+
+assets_ok() {
+  local root="$1"
+  local asset
+  for asset in "${REQUIRED_ASSETS[@]}"; do
+    [ -s "$root/assets/img/$asset" ] || return 1
+  done
+  return 0
+}
 
 if ! printf '%s' "$COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
   echo "ENKAF_DEPLOY_ERROR invalid_commit"
@@ -37,8 +51,11 @@ if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
 fi
 
 if [ -f "$DOMAIN_ROOT/.enkaf-release" ] && [ "$(tr -d '\r\n' < "$DOMAIN_ROOT/.enkaf-release")" = "$COMMIT" ]; then
-  echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT}"
-  exit 0
+  if assets_ok "$PUBLIC_ROOT"; then
+    echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT} assets=ok"
+    exit 0
+  fi
+  echo "ENKAF_DEPLOY_REPAIR commit=${COMMIT} reason=missing_visual_assets"
 fi
 
 cleanup() {
@@ -54,6 +71,10 @@ tar -xzf "$ARCHIVE" -C "$WORK"
 SRC="$(find "$WORK" -mindepth 1 -maxdepth 1 -type d -name 'Enkaf-*' | head -n 1)"
 if [ -z "$SRC" ] || [ ! -f "$SRC/public/index.php" ] || [ ! -f "$SRC/app/config.php" ] || [ ! -f "$SRC/scripts/validate.sh" ]; then
   echo "ENKAF_DEPLOY_ERROR incomplete_source"
+  exit 3
+fi
+if ! assets_ok "$SRC/public"; then
+  echo "ENKAF_DEPLOY_ERROR source_visual_assets_missing"
   exit 3
 fi
 
@@ -74,9 +95,6 @@ if [ "$HAD_PUBLIC" -eq 1 ] || [ "$HAD_APP" -eq 1 ]; then
   ITEMS=""
   [ "$HAD_PUBLIC" -eq 1 ] && ITEMS="public_html"
   [ "$HAD_APP" -eq 1 ] && ITEMS="${ITEMS} app"
-  # The legacy site can mutate cache/upload files while the archive is being created.
-  # Keep the backup usable without treating benign file-changed warnings as a deploy failure.
-  # shellcheck disable=SC2086
   tar --warning=no-file-changed --ignore-failed-read -czf "$BACKUP" -C "$DOMAIN_ROOT" $ITEMS
   if [ ! -s "$BACKUP" ]; then
     echo "ENKAF_DEPLOY_ERROR backup_missing"
@@ -104,6 +122,12 @@ mkdir -p "$APP_ROOT"
 cp -a "$SRC/public/." "$PUBLIC_ROOT/"
 cp -a "$SRC/app/." "$APP_ROOT/"
 
+if ! assets_ok "$PUBLIC_ROOT"; then
+  echo "ENKAF_DEPLOY_ERROR deployed_visual_assets_missing"
+  rollback
+  exit 4
+fi
+
 cat >> "$PUBLIC_ROOT/.htaccess" <<EOF
 
 # ENKAF deployment environment (generated from recorded GitHub commit)
@@ -117,8 +141,6 @@ printf '%s\n' "$COMMIT" > "$PUBLIC_ROOT/.enkaf-release"
 printf '%s\n' "$COMMIT" > "$PUBLIC_ROOT/enkaf-release.txt"
 chmod 644 "$PUBLIC_ROOT/.enkaf-release" "$PUBLIC_ROOT/enkaf-release.txt"
 
-# The hosting account can temporarily fail to resolve its own public hostname.
-# Verify the PHP runtime directly on-server, then verify the public hostname separately after deploy.
 HEALTH="$(ENKAF_SITE_URL="https://${DOMAIN}" ENKAF_REVIEW_MODE="$REVIEW_MODE" ENKAF_DATA_DIR="$PRIVATE_ROOT" REQUEST_URI='/healthz/' REQUEST_METHOD='GET' php "$PUBLIC_ROOT/index.php" 2>/dev/null || true)"
 RELEASE="$(cat "$DOMAIN_ROOT/.enkaf-release" 2>/dev/null || true)"
 if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE" | tr -d '\r\n')" != "$COMMIT" ]; then
@@ -127,4 +149,4 @@ if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE"
   exit 4
 fi
 
-echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} backup=${BACKUP}"
+echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} assets=ok backup=${BACKUP}"
