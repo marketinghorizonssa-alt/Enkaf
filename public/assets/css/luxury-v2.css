@@ -1,0 +1,15 @@
+.hero-media,.office-photo-main,.team-photo{background-repeat:no-repeat;background-size:cover;background-position:center}
+.hero-media{position:absolute;inset:0;z-index:-3;filter:saturate(.82) contrast(1.08) brightness(.9)}
+.hero-shade{background:linear-gradient(90deg,rgba(12,17,13,.48) 0%,rgba(17,24,19,.56) 36%,rgba(23,32,25,.86) 72%,rgba(23,32,25,.97) 100%)}
+.office-photo-main{background-position:center 54%;min-height:650px}
+.team-photo{background-position:center 45%;min-height:430px}
+.digital-grid-clean{grid-template-columns:minmax(280px,.62fr) minmax(0,1.15fr)}
+.digital-monogram{height:520px;background:linear-gradient(155deg,#172019 0%,#29332B 58%,#683F18 100%);display:flex;flex-direction:column;justify-content:flex-end;padding:42px;color:#F1EAD8;box-shadow:0 28px 70px rgba(47,34,22,.18);border:1px solid rgba(255,255,255,.08);position:relative;overflow:hidden}
+.digital-monogram::before{content:"";position:absolute;width:280px;height:280px;border:1px solid rgba(211,191,166,.16);border-radius:50%;top:-70px;left:-80px}
+.digital-monogram::after{content:"";position:absolute;inset:18px;border:1px solid rgba(211,191,166,.12)}
+.digital-monogram span{font-size:clamp(42px,6vw,82px);line-height:.9;letter-spacing:-.05em;font-weight:800;position:relative;z-index:1}
+.digital-monogram b{font-size:13px;letter-spacing:.42em;color:#D3BFA6;margin-top:14px;position:relative;z-index:1}
+.hero-meta span{white-space:nowrap}
+.lead-card{backdrop-filter:blur(10px)}
+@media(max-width:980px){.hero-shade{background:linear-gradient(0deg,rgba(23,32,25,.88),rgba(23,32,25,.62))}.office-story-grid,.team-grid,.digital-grid-clean{grid-template-columns:1fr}.office-photo-main{min-height:520px}.office-story-copy{padding:64px 0}.team-photo{min-height:480px}.digital-monogram{height:360px}}
+@media(max-width:680px){.container{width:min(100% - 28px,1220px)}.hero{min-height:auto}.hero-media{background-position:center}.hero-meta{gap:8px}.hero-meta span{border:0;padding:0 8px}.office-photo-main{min-height:390px}.team-photo{min-height:360px}.digital-monogram{height:280px;padding:28px}.header-location{display:none}.lead-card{padding:24px 18px}.trust-grid{grid-template-columns:1fr 1fr}}
