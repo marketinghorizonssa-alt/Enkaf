@@ -1,6 +1,11 @@
 Options -Indexes
 RewriteEngine On
 
+# ENKAF Google Tag Manager container.
+<IfModule mod_env.c>
+  SetEnv ENKAF_GTM_ID GTM-KR7SJ5H9
+</IfModule>
+
 # Force canonical crawl-control routes through PHP before existing-file checks.
 RewriteRule ^robots\.txt$ index.php [L,QSA]
 RewriteRule ^sitemap\.xml$ index.php [L,QSA]
