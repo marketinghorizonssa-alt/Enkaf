@@ -53,13 +53,88 @@
 
   captureAttribution();
 
+  function applyV6Presentation() {
+    if (!document.querySelector('link[data-enkaf-v6]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/assets/css/luxury-v6.css?v=20260822';
+      link.dataset.enkafV6 = '1';
+      document.head.appendChild(link);
+    }
+
+    const theme = Array.from(document.body.classList).find(c => c.startsWith('theme-'))?.replace('theme-', '') || '';
+    const visualMap = {
+      home:       { a:'/assets/img/hero-home.webp',       b:'/assets/img/hero-general.webp' },
+      general:    { a:'/assets/img/hero-general.webp',    b:'/assets/img/hero-home.webp' },
+      corporate:  { a:'/assets/img/hero-corporate.webp',  b:'/assets/img/hero-general.webp' },
+      disputes:   { a:'/assets/img/hero-disputes.webp',   b:'/assets/img/hero-home.webp' },
+      ip:         { a:'/assets/img/hero-ip.webp',         b:'/assets/img/hero-corporate.webp' },
+      realestate: { a:'/assets/img/hero-realestate.webp', b:'/assets/img/hero-corporate.webp' },
+    };
+    const visuals = visualMap[theme];
+    if (visuals) {
+      const officeImg = qs('.office-visual img');
+      const digitalImg = qs('.digital-visual img');
+      if (officeImg) officeImg.src = visuals.a;
+      if (digitalImg) digitalImg.src = visuals.b;
+    }
+
+    if (theme === 'home') {
+      const h1 = qs('.hero-copy h1');
+      const intro = qs('.hero-copy .hero-intro');
+      if (h1) h1.textContent = 'نخبة من المحامين بكفاءة عالية وخبرة سعودية برؤية حديثة';
+      if (intro) intro.textContent = 'يجمع إنكاف نخبة من المحامين ذوي الكفاءة والخبرات الممتدة في السوق السعودي مع رؤية واضحة وحديثة تعتمد على التقنية والتنظيم والعمل الحضوري وعن بُعد؛ لتقديم استشارات وتمثيل وصياغة قانونية بجودة عالية وتواصل أكثر وضوحًا للأفراد والشركات.';
+      const chips = qsa('.hero-details span');
+      ['خبرات ممتدة في السوق السعودي','فريق قانوني متعدد التخصصات','تواصل ومتابعة رقمية منظمة'].forEach((text, i) => { if (chips[i]) chips[i].textContent = text; });
+      const heading = qs('.services-section .section-heading h2');
+      const headingP = qs('.services-section .section-heading p');
+      const headingLabel = qs('.services-section .section-label');
+      if (headingLabel) headingLabel.textContent = 'لماذا إنكاف';
+      if (heading) heading.textContent = 'خبرة قانونية راسخة بمنهج عمل يواكب احتياجك اليوم';
+      if (headingP) headingP.textContent = 'الفخامة في إنكاف ليست مظهرًا فقط؛ بل مستوى في القراءة القانونية، جودة الصياغة، وضوح التواصل، وتنظيم المتابعة من أول تواصل وحتى تنفيذ نطاق العمل المتفق عليه.';
+      const cards = qsa('.services-section .scope-card');
+      const homeCards = [
+        ['خبرة في السوق السعودي','فهم للأنظمة وبيئة الأعمال والسياق المحلي يساعد على قراءة الملف ضمن واقعه العملي.'],
+        ['كفاءة وتخصص','توجيه الطلب إلى التخصص القانوني الأنسب مع ربط الرأي بالمستندات والوقائع والهدف.'],
+        ['رؤية حديثة وتقنية','استخدام أدوات تنظيم ومتابعة رقمية لتسهيل التواصل وتبادل المعلومات ومتابعة الطلب.'],
+        ['خدمة للأفراد والشركات','دعم قانوني من الاستشارة والعقد إلى النزاع والمطالبة والملكية الفكرية والعقار.'],
+      ];
+      cards.forEach((card, i) => {
+        const data = homeCards[i];
+        if (!data) return;
+        const title = qs('h3', card); const copy = qs('p', card);
+        if (title) title.textContent = data[0];
+        if (copy) copy.textContent = data[1];
+      });
+      document.title = 'إنكاف للمحاماة والاستشارات القانونية | خبرة سعودية ورؤية حديثة';
+      const desc = qs('meta[name="description"]');
+      if (desc) desc.content = 'إنكاف مكتب محاماة سعودي في جدة يجمع خبرات قانونية ممتدة في السوق السعودي مع أسلوب حديث وتقني في الاستشارات والتمثيل والخدمات القانونية للأفراد والشركات.';
+    }
+  }
+
+  applyV6Presentation();
+
   const form = qs('#leadForm');
   if (form) {
     ensureHiddenInputs(form);
     const status = qs('#formStatus', form);
     const button = qs('button[type="submit"]', form);
     const service = qs('[name="service"]', form);
+    const nameInput = qs('[name="full_name"]', form);
+    const phoneInput = qs('[name="phone"]', form);
+    const consentInput = qs('[name="privacy_consent"]', form);
     let started = false;
+
+    if (nameInput && !nameInput.value) nameInput.value = safeGet(sessionStorage, 'enkaf_form_name');
+    if (phoneInput && !phoneInput.value) phoneInput.value = safeGet(sessionStorage, 'enkaf_form_phone');
+    if (consentInput) consentInput.checked = true;
+
+    [nameInput, phoneInput].forEach((input) => {
+      if (!input) return;
+      input.addEventListener('input', () => {
+        safeSet(sessionStorage, input === nameInput ? 'enkaf_form_name' : 'enkaf_form_phone', input.value.trim());
+      });
+    });
 
     function dispatch(name, detail = {}) {
       document.dispatchEvent(new CustomEvent(`enkaf:${name}`, { detail }));
@@ -103,13 +178,13 @@
 
     function clientValidate() {
       const fields = {};
-      const name = qs('[name="full_name"]', form).value.trim();
-      const rawPhone = asciiDigits(qs('[name="phone"]', form).value);
+      const name = (nameInput?.value || '').trim();
+      const rawPhone = asciiDigits(phoneInput?.value || '');
       const phoneDigits = rawPhone.replace(/\D/g, '');
       if (name.length < 2) fields.full_name = 'اكتب الاسم بشكل صحيح.';
-      if (phoneDigits.length < 7 || phoneDigits.length > 15) fields.phone = 'اكتب رقم هاتف صحيح.';
+      if (phoneDigits.length < 7 || phoneDigits.length > 15) fields.phone = 'اكتب رقم تواصل صحيح بأي صيغة مناسبة.';
       if (!service.value) fields.service = 'اختر نوع الخدمة القانونية.';
-      if (!qs('[name="privacy_consent"]', form).checked) fields.privacy_consent = 'يلزم الموافقة على سياسة الخصوصية.';
+      if (!consentInput.checked) fields.privacy_consent = 'يلزم الموافقة على سياسة الخصوصية.';
       return fields;
     }
 
@@ -146,6 +221,8 @@
           throw new Error(data.message || 'تعذر إرسال الطلب الآن.');
         }
         const selectedText = service.options[service.selectedIndex]?.text || '';
+        safeSet(sessionStorage, 'enkaf_last_name', (nameInput?.value || '').trim());
+        safeSet(sessionStorage, 'enkaf_last_phone', (phoneInput?.value || '').trim());
         safeSet(sessionStorage, 'enkaf_last_service_label', selectedText);
         safeSet(sessionStorage, 'enkaf_last_lead_ref', data.lead_id || '');
         status.textContent = 'تم حفظ طلبك بنجاح. يتم تحويلك الآن...';
@@ -169,10 +246,14 @@
   const thankYouWhatsApp = qs('#thankYouWhatsapp');
   if (thankYouWhatsApp) {
     const ref = window.ENKAF_THANK_YOU_REF || safeGet(sessionStorage, 'enkaf_last_lead_ref');
+    const name = safeGet(sessionStorage, 'enkaf_last_name');
+    const phone = safeGet(sessionStorage, 'enkaf_last_phone');
     const service = safeGet(sessionStorage, 'enkaf_last_service_label');
-    const parts = ['مرحبًا إنكاف، أرسلت طلب تواصل عبر الموقع.'];
+    const parts = ['السلام عليكم إنكاف، أرسلت طلب استشارة عبر الموقع وأرغب في استكماله عبر واتساب.'];
+    if (name) parts.push(`الاسم: ${name}`);
+    if (phone) parts.push(`رقم التواصل: ${phone}`);
+    if (service) parts.push(`الخدمة: ${service}`);
     if (ref) parts.push(`رقم الطلب: ${ref}`);
-    if (service) parts.push(`نوع الخدمة: ${service}`);
     thankYouWhatsApp.href = `https://wa.me/${window.ENKAF_WA || '966559556606'}?text=${encodeURIComponent(parts.join('\n'))}`;
     document.dispatchEvent(new CustomEvent('enkaf:thank-you-view', { detail: { lead_id: ref || '' } }));
   }
