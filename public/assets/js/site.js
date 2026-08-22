@@ -59,7 +59,29 @@
     const status = qs('#formStatus', form);
     const button = qs('button[type="submit"]', form);
     const service = qs('[name="service"]', form);
+    const nameInput = qs('[name="full_name"]', form);
+    const phoneInput = qs('[name="phone"]', form);
+    const consentInput = qs('[name="privacy_consent"]', form);
     let started = false;
+
+    // Low-friction defaults approved for this form.
+    if (consentInput) consentInput.checked = true;
+
+    // Restore previously entered values in the same browser/session without putting PII in URLs.
+    const savedName = safeGet(sessionStorage, 'enkaf_form_name');
+    const savedPhone = safeGet(sessionStorage, 'enkaf_form_phone');
+    const savedService = safeGet(sessionStorage, 'enkaf_form_service');
+    if (nameInput && !nameInput.value && savedName) nameInput.value = savedName;
+    if (phoneInput && !phoneInput.value && savedPhone) phoneInput.value = savedPhone;
+    if (service && savedService && Array.from(service.options).some(o => o.value === savedService)) service.value = savedService;
+
+    const rememberForm = () => {
+      if (nameInput) safeSet(sessionStorage, 'enkaf_form_name', nameInput.value.trim());
+      if (phoneInput) safeSet(sessionStorage, 'enkaf_form_phone', phoneInput.value.trim());
+      if (service) safeSet(sessionStorage, 'enkaf_form_service', service.value);
+    };
+    [nameInput, phoneInput, service].filter(Boolean).forEach(el => el.addEventListener('input', rememberForm));
+    if (service) service.addEventListener('change', rememberForm);
 
     function dispatch(name, detail = {}) {
       document.dispatchEvent(new CustomEvent(`enkaf:${name}`, { detail }));
@@ -103,13 +125,13 @@
 
     function clientValidate() {
       const fields = {};
-      const name = qs('[name="full_name"]', form).value.trim();
-      const rawPhone = asciiDigits(qs('[name="phone"]', form).value);
+      const name = nameInput.value.trim();
+      const rawPhone = asciiDigits(phoneInput.value);
       const phoneDigits = rawPhone.replace(/\D/g, '');
       if (name.length < 2) fields.full_name = 'اكتب الاسم بشكل صحيح.';
       if (phoneDigits.length < 7 || phoneDigits.length > 15) fields.phone = 'اكتب رقم هاتف صحيح.';
       if (!service.value) fields.service = 'اختر نوع الخدمة القانونية.';
-      if (!qs('[name="privacy_consent"]', form).checked) fields.privacy_consent = 'يلزم الموافقة على سياسة الخصوصية.';
+      if (!consentInput.checked) fields.privacy_consent = 'يلزم الموافقة على سياسة الخصوصية.';
       return fields;
     }
 
@@ -123,6 +145,7 @@
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       clearErrors();
+      rememberForm();
       fillHidden();
       const localErrors = clientValidate();
       if (Object.keys(localErrors).length) {
@@ -146,6 +169,8 @@
           throw new Error(data.message || 'تعذر إرسال الطلب الآن.');
         }
         const selectedText = service.options[service.selectedIndex]?.text || '';
+        safeSet(sessionStorage, 'enkaf_last_name', nameInput.value.trim());
+        safeSet(sessionStorage, 'enkaf_last_phone', phoneInput.value.trim());
         safeSet(sessionStorage, 'enkaf_last_service_label', selectedText);
         safeSet(sessionStorage, 'enkaf_last_lead_ref', data.lead_id || '');
         status.textContent = 'تم حفظ طلبك بنجاح. يتم تحويلك الآن...';
@@ -169,10 +194,14 @@
   const thankYouWhatsApp = qs('#thankYouWhatsapp');
   if (thankYouWhatsApp) {
     const ref = window.ENKAF_THANK_YOU_REF || safeGet(sessionStorage, 'enkaf_last_lead_ref');
+    const name = safeGet(sessionStorage, 'enkaf_last_name');
+    const phone = safeGet(sessionStorage, 'enkaf_last_phone');
     const service = safeGet(sessionStorage, 'enkaf_last_service_label');
-    const parts = ['مرحبًا إنكاف، أرسلت طلب تواصل عبر الموقع.'];
-    if (ref) parts.push(`رقم الطلب: ${ref}`);
+    const parts = ['مرحبًا إنكاف، أرسلت طلب تواصل عبر الموقع وأرغب في استكماله عبر واتساب.'];
+    if (name) parts.push(`الاسم: ${name}`);
+    if (phone) parts.push(`رقم التواصل: ${phone}`);
     if (service) parts.push(`نوع الخدمة: ${service}`);
+    if (ref) parts.push(`رقم الطلب: ${ref}`);
     thankYouWhatsApp.href = `https://wa.me/${window.ENKAF_WA || '966559556606'}?text=${encodeURIComponent(parts.join('\n'))}`;
     document.dispatchEvent(new CustomEvent('enkaf:thank-you-view', { detail: { lead_id: ref || '' } }));
   }
