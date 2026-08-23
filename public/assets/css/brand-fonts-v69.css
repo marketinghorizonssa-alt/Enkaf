@@ -1,0 +1,14 @@
+/* ENKAF-V6.9-BRAND-FONTS
+   Brand typography mapping based on the supplied identity files.
+   Arabic UI/body: DIN Next LT Arabic Medium. Arabic headings: DIN Next LT Arabic Bold.
+   Latin display/brand accents: Seraphim.
+   The same stack is enforced on desktop and mobile. */
+@font-face{font-family:"Enkaf DIN";src:url("https://db.onlinewebfonts.com/t/aba1a083bf50980a05f0265179103a09.woff2") format("woff2");font-style:normal;font-weight:400 600;font-display:swap}
+@font-face{font-family:"Enkaf DIN";src:url("https://db.onlinewebfonts.com/t/513071b47bdba774c93a73ad16a75e3b.woff2") format("woff2");font-style:normal;font-weight:700 900;font-display:swap}
+@font-face{font-family:"Enkaf Seraphim";src:url("https://db.onlinewebfonts.com/t/24b0482079b5b808f87ca9ec79db8118.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap}
+:root{--font-body:"Enkaf DIN",Tahoma,"Segoe UI","Geeza Pro",Arial,sans-serif;--font-display:"Enkaf DIN","Traditional Arabic","Noto Naskh Arabic","Geeza Pro",serif;--font-brand-latin:"Enkaf Seraphim",Georgia,"Times New Roman",serif}
+html,body,button,input,select,textarea{font-family:var(--font-body);font-synthesis:none}
+.hero h1,.section-heading h2,.office-copy h2,.digital-copy h2,.final-cta h2,.legal-hero h1,.thanks-card h1,.lead-card h2{font-family:var(--font-display);font-weight:700;font-synthesis:none;line-height:1.12}
+:lang(en),.font-seraphim,[data-font="seraphim"]{font-family:var(--font-brand-latin);font-weight:400}
+@media(max-width:860px){html,body,button,input,select,textarea{font-family:var(--font-body)}.hero h1,.section-heading h2,.office-copy h2,.digital-copy h2,.final-cta h2,.legal-hero h1,.thanks-card h1,.lead-card h2{font-family:var(--font-display);line-height:1.14}}
+@media(max-width:620px){html,body,button,input,select,textarea{font-family:var(--font-body)}.hero h1,.section-heading h2,.office-copy h2,.digital-copy h2,.final-cta h2,.legal-hero h1,.thanks-card h1,.lead-card h2{font-family:var(--font-display);line-height:1.16}}
