@@ -1,0 +1,30 @@
+/* ENKAF V6.7 — production visual mapping. Home uses approved real NKF photography. Each practice-area landing uses the approved service visual + two additional real NKF photos. */
+:root{--service-img-overlay:linear-gradient(135deg,rgba(7,18,12,.20),rgba(6,14,10,.48))}
+
+/* HOME — three approved real NKF images */
+.theme-home .hero{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/home-hero.webp');background-size:cover;background-position:center 44%}.theme-home .hero-photo-img{opacity:0}
+.theme-home .office-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/home-office.webp');background-size:cover;background-position:center}.theme-home .digital-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/home-digital.webp');background-size:cover;background-position:center}.theme-home .office-visual img,.theme-home .digital-visual img{opacity:0}
+
+/* GENERAL LEGAL CONSULTATIONS — approved visual + two real NKF images */
+.theme-general .hero{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/general-hero.webp');background-size:cover;background-position:center}.theme-general .hero-photo-img{opacity:0}
+.theme-general .office-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/general-office.webp');background-size:cover;background-position:center}.theme-general .digital-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/general-digital.webp');background-size:cover;background-position:center}.theme-general .office-visual img,.theme-general .digital-visual img{opacity:0}
+
+/* COMPANIES — approved visual + two real NKF images */
+.theme-corporate .hero{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/corporate-hero.webp');background-size:cover;background-position:center}.theme-corporate .hero-photo-img{opacity:0}
+.theme-corporate .office-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/corporate-office.webp');background-size:cover;background-position:center}.theme-corporate .digital-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/corporate-digital.webp');background-size:cover;background-position:center}.theme-corporate .office-visual img,.theme-corporate .digital-visual img{opacity:0}
+
+/* COMMERCIAL DISPUTES — approved visual + two real NKF images */
+.theme-disputes .hero{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/disputes-hero.webp');background-size:cover;background-position:center}.theme-disputes .hero-photo-img{opacity:0}
+.theme-disputes .office-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/disputes-office.webp');background-size:cover;background-position:center}.theme-disputes .digital-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/disputes-digital.webp');background-size:cover;background-position:center}.theme-disputes .office-visual img,.theme-disputes .digital-visual img{opacity:0}
+
+/* INTELLECTUAL PROPERTY — approved visual + two real NKF images */
+.theme-ip .hero{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/ip-hero.webp');background-size:cover;background-position:center}.theme-ip .hero-photo-img{opacity:0}
+.theme-ip .office-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/ip-office.webp');background-size:cover;background-position:center}.theme-ip .digital-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/ip-digital.webp');background-size:cover;background-position:center}.theme-ip .office-visual img,.theme-ip .digital-visual img{opacity:0}
+
+/* REAL ESTATE — approved visual + two real NKF images */
+.theme-realestate .hero{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/realestate-hero.webp');background-size:cover;background-position:center}.theme-realestate .hero-photo-img{opacity:0}
+.theme-realestate .office-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/realestate-office.webp');background-size:cover;background-position:center}.theme-realestate .digital-visual{background-image:var(--service-img-overlay),url('/assets/img/nkf/v67/realestate-digital.webp');background-size:cover;background-position:center}.theme-realestate .office-visual img,.theme-realestate .digital-visual img{opacity:0}
+
+.theme-home .office-visual,.theme-home .digital-visual,.theme-general .office-visual,.theme-general .digital-visual,.theme-corporate .office-visual,.theme-corporate .digital-visual,.theme-disputes .office-visual,.theme-disputes .digital-visual,.theme-ip .office-visual,.theme-ip .digital-visual,.theme-realestate .office-visual,.theme-realestate .digital-visual{background-repeat:no-repeat;isolation:isolate;background-color:#0d1811}
+.theme-home .office-visual::after,.theme-home .digital-visual::after,.theme-general .office-visual::after,.theme-general .digital-visual::after,.theme-corporate .office-visual::after,.theme-corporate .digital-visual::after,.theme-disputes .office-visual::after,.theme-disputes .digital-visual::after,.theme-ip .office-visual::after,.theme-ip .digital-visual::after,.theme-realestate .office-visual::after,.theme-realestate .digital-visual::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(4,10,7,.01),rgba(4,10,7,.22));z-index:1}
+@media(max-width:860px){.theme-home .hero,.theme-general .hero,.theme-corporate .hero,.theme-disputes .hero,.theme-ip .hero,.theme-realestate .hero{background-position:center}.theme-home .office-visual,.theme-home .digital-visual,.theme-general .office-visual,.theme-general .digital-visual,.theme-corporate .office-visual,.theme-corporate .digital-visual,.theme-disputes .office-visual,.theme-disputes .digital-visual,.theme-ip .office-visual,.theme-ip .digital-visual,.theme-realestate .office-visual,.theme-realestate .digital-visual{background-position:center}}
