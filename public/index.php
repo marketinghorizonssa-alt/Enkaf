@@ -5,6 +5,7 @@ require_once dirname(__DIR__) . '/app/config.php';
 require_once dirname(__DIR__) . '/app/helpers.php';
 require_once dirname(__DIR__) . '/app/leads.php';
 require_once dirname(__DIR__) . '/app/views.php';
+require_once dirname(__DIR__) . '/app/enhancements.php';
 
 $cfg = site_config();
 header('X-Content-Type-Options: nosniff');
@@ -25,7 +26,7 @@ if ($path === '/healthz/') {
     echo json_encode([
         'ok' => true,
         'service' => 'enkaf-landing-site',
-        'build' => BUILD_ID . '-v5-legal',
+        'build' => BUILD_ID . '-v5-legal-about-seo',
         'design' => 'legal-conversion-v5',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
@@ -53,30 +54,35 @@ if ($path === '/sitemap.xml/') {
     header('Content-Type: application/xml; charset=utf-8');
     header('Cache-Control: no-cache, max-age=0');
     $urls = array_keys(page_catalog());
+    $urls[] = '/من-نحن/';
     $urls[] = '/سياسة-الخصوصية/';
     echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
     foreach ($urls as $u) {
-        echo '  <url><loc>' . htmlspecialchars(absolute_url($u), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><lastmod>2026-08-20</lastmod></url>' . "\n";
+        echo '  <url><loc>' . htmlspecialchars(absolute_url($u), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><lastmod>2026-08-24</lastmod></url>' . "\n";
     }
     echo '</urlset>';
     exit;
 }
 
 if ($path === '/سياسة-الخصوصية/') {
-    echo privacy_html();
+    echo enhance_site_html(privacy_html(), $path);
     exit;
 }
 if ($path === '/شكرا/') {
-    echo thank_you_html();
+    echo enhance_site_html(thank_you_html(), $path);
+    exit;
+}
+if ($path === '/من-نحن/') {
+    echo enhance_site_html(about_page_html(), $path);
     exit;
 }
 
 $catalog = page_catalog();
 if (isset($catalog[$path])) {
-    echo page_html($catalog[$path]);
+    echo enhance_site_html(page_html($catalog[$path]), $path);
     exit;
 }
 
 http_response_code(404);
-echo not_found_html();
+echo enhance_site_html(not_found_html(), $path);
