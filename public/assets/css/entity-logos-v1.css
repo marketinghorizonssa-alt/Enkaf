@@ -1,0 +1,48 @@
+/* ENKAF entity logos + numbering cleanup — 2026-08-24 */
+.scope-number,
+.step-number{display:none!important}
+
+.scope-card .scope-icon{margin-top:0!important}
+
+.enkaf-entity-logo-slot{
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  max-width:30px!important;
+  padding:4px!important;
+  border-radius:999px!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  background:#fff!important;
+  border:1px solid rgba(41,51,43,.14)!important;
+  box-shadow:0 2px 8px rgba(15,24,18,.06)!important;
+  color:transparent!important;
+  font-size:0!important;
+  line-height:0!important;
+}
+
+.enkaf-entity-logo-slot img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  border-radius:5px!important;
+}
+
+.enkaf-entity-logo-slot img[data-generic="1"]{
+  padding:1px!important;
+}
+
+@media (max-width:720px){
+  .enkaf-entity-logo-slot{
+    width:28px!important;
+    height:28px!important;
+    min-width:28px!important;
+    max-width:28px!important;
+    padding:4px!important;
+  }
+}
