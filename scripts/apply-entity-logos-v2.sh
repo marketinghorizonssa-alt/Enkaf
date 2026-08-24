@@ -7,17 +7,19 @@ INDEX="$PUBLIC/index.php"
 BACKUPS="$ROOT/enkaf-backups"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 WORK="$ROOT/.entity-logos-v2-$STAMP"
+NEW_INDEX="$WORK/index.new.php"
 
 mkdir -p "$WORK" "$BACKUPS"
 cp -a "$INDEX" "$BACKUPS/index-before-entity-logos-v2-$STAMP.php"
 
 cat > "$WORK/patch.php" <<'PHP'
 <?php
-$f = $argv[1];
-$s = file_get_contents($f);
+$src = $argv[1];
+$dst = $argv[2];
+$s = file_get_contents($src);
 if ($s === false) exit(10);
 if (strpos($s, 'ENKAF_ENTITY_LOGOS_V2') === false) {
-    $needle = "$cfg = site_config();";
+    $needle = '$cfg = site_config();';
     $inject = <<<'CODE'
 // ENKAF_ENTITY_LOGOS_V2: render entity logos in the HTML itself so abbreviations never flash or remain visible.
 ob_start(function (string $html): string {
@@ -59,16 +61,16 @@ CODE;
     if (strpos($s, $needle) === false) exit(11);
     $s = str_replace($needle, $inject, $s, $count);
     if ($count !== 1) exit(12);
-    if (file_put_contents($f, $s) === false) exit(13);
 }
+if (file_put_contents($dst, $s) === false) exit(13);
 PHP
 
-php "$WORK/patch.php" "$INDEX"
-php -l "$INDEX" >/dev/null
-grep -Fq 'ENKAF_ENTITY_LOGOS_V2' "$INDEX"
+php "$WORK/patch.php" "$INDEX" "$NEW_INDEX"
+php -l "$NEW_INDEX" >/dev/null
+grep -Fq 'ENKAF_ENTITY_LOGOS_V2' "$NEW_INDEX"
 
-REQUEST_URI='/محامي-شركات-وتأسيس-شركات/' REQUEST_METHOD='GET' ENKAF_REVIEW_MODE='false' php "$INDEX" > "$WORK/corporate.html"
-REQUEST_URI='/محامي-عقاري-وتوثيق-عقود/' REQUEST_METHOD='GET' ENKAF_REVIEW_MODE='false' php "$INDEX" > "$WORK/realestate.html"
+REQUEST_URI='/محامي-شركات-وتأسيس-شركات/' REQUEST_METHOD='GET' ENKAF_REVIEW_MODE='false' php "$NEW_INDEX" > "$WORK/corporate.html"
+REQUEST_URI='/محامي-عقاري-وتوثيق-عقود/' REQUEST_METHOD='GET' ENKAF_REVIEW_MODE='false' php "$NEW_INDEX" > "$WORK/realestate.html"
 
 grep -Fq '/assets/img/entities/mc.png' "$WORK/corporate.html"
 grep -Fq '/assets/img/entities/sbc.png' "$WORK/corporate.html"
@@ -77,6 +79,9 @@ grep -Fq '/assets/img/entities/rex.png' "$WORK/realestate.html"
 grep -Fq 'enkaf-entity-logo-slot' "$WORK/corporate.html"
 ! grep -Eq '>\s*(MC|SBC|INVEST|MISA|LAW)\s*<' "$WORK/corporate.html"
 ! grep -Eq '>\s*(RER|REX|MOJ|NOTARY|LAW)\s*<' "$WORK/realestate.html"
+
+cp -a "$NEW_INDEX" "$INDEX"
+php -l "$INDEX" >/dev/null
 
 echo "ENKAF_ENTITY_LOGOS_V2_OK"
 rm -rf "$WORK"
