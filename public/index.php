@@ -140,4 +140,4 @@ if (isset($catalog[$path])) {
 }
 
 http_response_code(404);
-echo performance_ready_html(enhance_site_html(not_found_html(), $path);
+echo performance_ready_html(enhance_site_html(not_found_html(), $path), $path);
