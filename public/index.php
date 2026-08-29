@@ -22,6 +22,31 @@ function performance_ready_html(string $html, string $path): string {
         $html = str_replace('</head>', $bundle . '</head>', $html);
     }
 
+    // The GTM container only contained one Google Ads destination, a conversion linker,
+    // three conversion actions, and a small event bridge. Use the official Google tag
+    // directly to remove the GTM runtime while preserving the exact conversion labels.
+    $withoutGtm = preg_replace(
+        '#<script>\(function\(w,d,s,l,i\)\{.*?googletagmanager\.com/gtm\.js\?id=.*?</script>#s',
+        '',
+        $html,
+        1
+    );
+    if (is_string($withoutGtm)) $html = $withoutGtm;
+    $withoutGtmFallback = preg_replace(
+        '#<noscript><iframe src="https://www\.googletagmanager\.com/ns\.html\?id=GTM-KR7SJ5H9"[^>]*></iframe></noscript>#s',
+        '',
+        $html
+    );
+    if (is_string($withoutGtmFallback)) $html = $withoutGtmFallback;
+
+    if (!str_contains($html, 'gtag/js?id=AW-16636347005')) {
+        $adsTag = '<script async src="https://www.googletagmanager.com/gtag/js?id=AW-16636347005"></script>'
+            . '<script>(function(){window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag("js",new Date());gtag("config","AW-16636347005");'
+            . 'document.addEventListener("enkaf:lead-success",function(){gtag("event","conversion",{"send_to":"AW-16636347005/H5l2CK3CiOYcEP2E6vw9"});},false);'
+            . 'document.addEventListener("click",function(e){var a=e.target;while(a&&a!==document&&(!a.tagName||a.tagName.toLowerCase()!=="a"))a=a.parentNode;if(!a||!a.getAttribute)return;var h=a.getAttribute("href")||"";if(/^tel:/i.test(h)){gtag("event","conversion",{"send_to":"AW-16636347005/35hICKvDiOYcEP2E6vw9"});}else if(/wa\\.me|api\\.whatsapp\\.com|whatsapp\\.com/i.test(h)){gtag("event","conversion",{"send_to":"AW-16636347005/QSPVCKjDiOYcEP2E6vw9"});}},true);})();</script>';
+        $html = str_replace('</head>', $adsTag . '</head>', $html);
+    }
+
     $visuals = [
         '/' => ['/assets/img/hero-home.webp', '/assets/img/hero-general.webp'],
         '/محامي-واستشارات-قانونية/' => ['/assets/img/hero-general.webp', '/assets/img/hero-home.webp'],
@@ -81,7 +106,7 @@ if ($path === '/healthz/') {
     echo json_encode([
         'ok' => true,
         'service' => 'enkaf-landing-site',
-        'build' => BUILD_ID . '-v5-legal-about-seo-perf-bundle',
+        'build' => BUILD_ID . '-v5-legal-about-seo-perf-direct-ads',
         'design' => 'legal-conversion-v6',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
