@@ -32,6 +32,27 @@ assets_ok() {
   return 0
 }
 
+css_sources_ok() {
+  local root="$1"
+  [ -s "$root/assets/css/site.css" ] \
+    && [ -s "$root/assets/css/enhancements.css" ] \
+    && [ -s "$root/assets/css/luxury-v6.css" ]
+}
+
+build_css_bundle() {
+  local root="$1"
+  local bundle="$root/assets/css/enkaf-bundle.css"
+  {
+    cat "$root/assets/css/site.css"
+    printf '\n'
+    cat "$root/assets/css/enhancements.css"
+    printf '\n'
+    cat "$root/assets/css/luxury-v6.css"
+    printf '\n'
+  } > "$bundle"
+  [ -s "$bundle" ]
+}
+
 if ! printf '%s' "$COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
   echo "ENKAF_DEPLOY_ERROR invalid_commit"
   exit 2
@@ -51,11 +72,11 @@ if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
 fi
 
 if [ -f "$DOMAIN_ROOT/.enkaf-release" ] && [ "$(tr -d '\r\n' < "$DOMAIN_ROOT/.enkaf-release")" = "$COMMIT" ]; then
-  if assets_ok "$PUBLIC_ROOT"; then
-    echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT} assets=ok"
+  if assets_ok "$PUBLIC_ROOT" && [ -s "$PUBLIC_ROOT/assets/css/enkaf-bundle.css" ]; then
+    echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT} assets=ok css_bundle=ok"
     exit 0
   fi
-  echo "ENKAF_DEPLOY_REPAIR commit=${COMMIT} reason=missing_visual_assets"
+  echo "ENKAF_DEPLOY_REPAIR commit=${COMMIT} reason=missing_required_runtime_asset"
 fi
 
 cleanup() {
@@ -75,6 +96,10 @@ if [ -z "$SRC" ] || [ ! -f "$SRC/public/index.php" ] || [ ! -f "$SRC/app/config.
 fi
 if ! assets_ok "$SRC/public"; then
   echo "ENKAF_DEPLOY_ERROR source_visual_assets_missing"
+  exit 3
+fi
+if ! css_sources_ok "$SRC/public"; then
+  echo "ENKAF_DEPLOY_ERROR source_css_missing"
   exit 3
 fi
 
@@ -127,6 +152,11 @@ if ! assets_ok "$PUBLIC_ROOT"; then
   rollback
   exit 4
 fi
+if ! css_sources_ok "$PUBLIC_ROOT" || ! build_css_bundle "$PUBLIC_ROOT"; then
+  echo "ENKAF_DEPLOY_ERROR css_bundle_failed"
+  rollback
+  exit 4
+fi
 
 cat >> "$PUBLIC_ROOT/.htaccess" <<EOF
 
@@ -149,4 +179,4 @@ if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE"
   exit 4
 fi
 
-echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} assets=ok backup=${BACKUP}"
+echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} assets=ok css_bundle=ok backup=${BACKUP}"
