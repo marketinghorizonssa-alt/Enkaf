@@ -7,20 +7,35 @@ require_once dirname(__DIR__) . '/app/leads.php';
 require_once dirname(__DIR__) . '/app/views.php';
 require_once dirname(__DIR__) . '/app/enhancements.php';
 
+function enkaf_csp_nonce(): string {
+    static $nonce = null;
+    if ($nonce === null) {
+        $nonce = rtrim(strtr(base64_encode(random_bytes(18)), '+/', '-_'), '=');
+    }
+    return $nonce;
+}
+
 function performance_ready_html(string $html, string $path): string {
-    // Keep the complete V6 visual system, but deliver it as one CSS request.
-    // This removes the render-blocking chain created by site.css + enhancements.css + luxury-v6.css.
+    // Keep the complete V6 visual system but inline the tiny production bundle.
+    // This removes the last render-blocking CSS request while keeping first-paint
+    // geometry identical, so there is no async-stylesheet layout shift.
     $cleaned = preg_replace(
-        '#<link[^>]+href="/assets/css/(?:site|enhancements|luxury-v6)\.css(?:\?[^\"]*)?"[^>]*>#',
+        '#<link[^>]+href="/assets/css/(?:site|enhancements|luxury-v6|enkaf-bundle)\.css(?:\?[^\"]*)?"[^>]*>#',
         '',
         $html
     );
     if (is_string($cleaned)) $html = $cleaned;
-    $bundle = '<link rel="preload" href="/assets/css/enkaf-bundle.css?v=20260829-3" as="style">'
-        . '<link rel="stylesheet" data-enkaf-v6="1" href="/assets/css/enkaf-bundle.css?v=20260829-3">';
-    if (!str_contains($html, '/assets/css/enkaf-bundle.css')) {
-        $html = str_replace('</head>', $bundle . '</head>', $html);
+
+    $bundlePath = __DIR__ . '/assets/css/enkaf-bundle.css';
+    $bundleCss = is_file($bundlePath) ? file_get_contents($bundlePath) : false;
+    if (is_string($bundleCss) && trim($bundleCss) !== '') {
+        $css = '<style nonce="' . e(enkaf_csp_nonce()) . '" data-enkaf-v6="1">' . $bundleCss . '</style>'
+            . '<link rel="stylesheet" data-enkaf-v6="1" disabled>';
+    } else {
+        $css = '<link rel="preload" href="/assets/css/enkaf-bundle.css?v=20260829-3" as="style">'
+            . '<link rel="stylesheet" data-enkaf-v6="1" href="/assets/css/enkaf-bundle.css?v=20260829-3">';
     }
+    $html = str_replace('</head>', $css . '</head>', $html);
 
     $visuals = [
         '/' => ['/assets/img/hero-home.webp', '/assets/img/hero-general.webp'],
@@ -63,10 +78,11 @@ function performance_ready_html(string $html, string $path): string {
 }
 
 $cfg = site_config();
+$nonce = enkaf_csp_nonce();
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://www.googletagmanager.com 'unsafe-inline'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com; frame-src https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'nonce-{$nonce}'; script-src 'self' https://www.googletagmanager.com 'unsafe-inline'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com; frame-src https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
 if ($cfg['review_mode']) header('X-Robots-Tag: noindex, nofollow');
 
 $rawPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
@@ -81,7 +97,7 @@ if ($path === '/healthz/') {
     echo json_encode([
         'ok' => true,
         'service' => 'enkaf-landing-site',
-        'build' => BUILD_ID . '-v5-legal-about-seo-perf-bundle',
+        'build' => BUILD_ID . '-v5-legal-about-seo-perf-inline-css',
         'design' => 'legal-conversion-v6',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
