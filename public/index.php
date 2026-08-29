@@ -8,9 +8,18 @@ require_once dirname(__DIR__) . '/app/views.php';
 require_once dirname(__DIR__) . '/app/enhancements.php';
 
 function performance_ready_html(string $html, string $path): string {
-    $v6 = '<link rel="stylesheet" data-enkaf-v6="1" href="/assets/css/luxury-v6.css?v=20260829-2">';
-    if (!str_contains($html, 'data-enkaf-v6')) {
-        $html = str_replace('</head>', $v6 . '</head>', $html);
+    // Keep the complete V6 visual system, but deliver it as one CSS request.
+    // This removes the render-blocking chain created by site.css + enhancements.css + luxury-v6.css.
+    $cleaned = preg_replace(
+        '#<link[^>]+href="/assets/css/(?:site|enhancements|luxury-v6)\.css(?:\?[^\"]*)?"[^>]*>#',
+        '',
+        $html
+    );
+    if (is_string($cleaned)) $html = $cleaned;
+    $bundle = '<link rel="preload" href="/assets/css/enkaf-bundle.css?v=20260829-3" as="style">'
+        . '<link rel="stylesheet" data-enkaf-v6="1" href="/assets/css/enkaf-bundle.css?v=20260829-3">';
+    if (!str_contains($html, '/assets/css/enkaf-bundle.css')) {
+        $html = str_replace('</head>', $bundle . '</head>', $html);
     }
 
     $visuals = [
@@ -72,7 +81,7 @@ if ($path === '/healthz/') {
     echo json_encode([
         'ok' => true,
         'service' => 'enkaf-landing-site',
-        'build' => BUILD_ID . '-v5-legal-about-seo-perf',
+        'build' => BUILD_ID . '-v5-legal-about-seo-perf-bundle',
         'design' => 'legal-conversion-v6',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
@@ -131,4 +140,4 @@ if (isset($catalog[$path])) {
 }
 
 http_response_code(404);
-echo performance_ready_html(enhance_site_html(not_found_html(), $path), $path);
+echo performance_ready_html(enhance_site_html(not_found_html(), $path);
