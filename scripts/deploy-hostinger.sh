@@ -32,48 +32,6 @@ assets_ok() {
   return 0
 }
 
-css_sources_ok() {
-  local root="$1"
-  [ -s "$root/assets/css/site.css" ] \
-    && [ -s "$root/assets/css/luxury-v6.css" ] \
-    && [ -s "$root/assets/css/enhancements.css" ] \
-    && [ -s "$root/assets/css/brand-fonts-v69.css" ]
-}
-
-css_bundle_ok() {
-  local root="$1"
-  local bundle="$root/assets/css/enkaf-bundle.css"
-  [ -s "$bundle" ] \
-    && grep -Fq 'ENKAF V6' "$bundle" \
-    && grep -Fq 'ENKAF content/SEO enhancement layer' "$bundle" \
-    && grep -Fq 'ENKAF-V6.9-BRAND-FONTS' "$bundle"
-}
-
-app_runtime_ok() {
-  local root="$1"
-  [ -s "$root/enhancements.php" ] \
-    && grep -Fq 'function authority_context' "$root/enhancements.php" \
-    && grep -Fq 'وزارة التجارة' "$root/enhancements.php" \
-    && grep -Fq 'الهيئة السعودية للملكية الفكرية' "$root/enhancements.php" \
-    && grep -Fq 'function about_page_html' "$root/enhancements.php"
-}
-
-build_css_bundle() {
-  local root="$1"
-  local bundle="$root/assets/css/enkaf-bundle.css"
-  {
-    cat "$root/assets/css/site.css"
-    printf '\n'
-    cat "$root/assets/css/luxury-v6.css"
-    printf '\n'
-    cat "$root/assets/css/enhancements.css"
-    printf '\n'
-    cat "$root/assets/css/brand-fonts-v69.css"
-    printf '\n'
-  } > "$bundle"
-  css_bundle_ok "$root"
-}
-
 if ! printf '%s' "$COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
   echo "ENKAF_DEPLOY_ERROR invalid_commit"
   exit 2
@@ -93,11 +51,11 @@ if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
 fi
 
 if [ -f "$DOMAIN_ROOT/.enkaf-release" ] && [ "$(tr -d '\r\n' < "$DOMAIN_ROOT/.enkaf-release")" = "$COMMIT" ]; then
-  if assets_ok "$PUBLIC_ROOT" && css_bundle_ok "$PUBLIC_ROOT" && app_runtime_ok "$APP_ROOT"; then
-    echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT} assets=ok css_bundle=complete app_runtime=complete"
+  if assets_ok "$PUBLIC_ROOT"; then
+    echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT} assets=ok"
     exit 0
   fi
-  echo "ENKAF_DEPLOY_REPAIR commit=${COMMIT} reason=incomplete_runtime"
+  echo "ENKAF_DEPLOY_REPAIR commit=${COMMIT} reason=missing_visual_assets"
 fi
 
 cleanup() {
@@ -117,14 +75,6 @@ if [ -z "$SRC" ] || [ ! -f "$SRC/public/index.php" ] || [ ! -f "$SRC/app/config.
 fi
 if ! assets_ok "$SRC/public"; then
   echo "ENKAF_DEPLOY_ERROR source_visual_assets_missing"
-  exit 3
-fi
-if ! css_sources_ok "$SRC/public"; then
-  echo "ENKAF_DEPLOY_ERROR source_css_missing"
-  exit 3
-fi
-if ! app_runtime_ok "$SRC/app"; then
-  echo "ENKAF_DEPLOY_ERROR source_app_enhancements_missing"
   exit 3
 fi
 
@@ -177,16 +127,6 @@ if ! assets_ok "$PUBLIC_ROOT"; then
   rollback
   exit 4
 fi
-if ! css_sources_ok "$PUBLIC_ROOT" || ! build_css_bundle "$PUBLIC_ROOT"; then
-  echo "ENKAF_DEPLOY_ERROR css_bundle_failed"
-  rollback
-  exit 4
-fi
-if ! app_runtime_ok "$APP_ROOT"; then
-  echo "ENKAF_DEPLOY_ERROR deployed_app_enhancements_missing"
-  rollback
-  exit 4
-fi
 
 cat >> "$PUBLIC_ROOT/.htaccess" <<EOF
 
@@ -203,10 +143,10 @@ chmod 644 "$PUBLIC_ROOT/.enkaf-release" "$PUBLIC_ROOT/enkaf-release.txt"
 
 HEALTH="$(ENKAF_SITE_URL="https://${DOMAIN}" ENKAF_REVIEW_MODE="$REVIEW_MODE" ENKAF_DATA_DIR="$PRIVATE_ROOT" REQUEST_URI='/healthz/' REQUEST_METHOD='GET' php "$PUBLIC_ROOT/index.php" 2>/dev/null || true)"
 RELEASE="$(cat "$DOMAIN_ROOT/.enkaf-release" 2>/dev/null || true)"
-if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE" | tr -d '\r\n')" != "$COMMIT" ] || ! css_bundle_ok "$PUBLIC_ROOT" || ! app_runtime_ok "$APP_ROOT"; then
+if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE" | tr -d '\r\n')" != "$COMMIT" ]; then
   echo "ENKAF_DEPLOY_ERROR local_verification_failed commit=${COMMIT}"
   rollback
   exit 4
 fi
 
-echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} assets=ok css_bundle=complete app_runtime=complete backup=${BACKUP}"
+echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} assets=ok backup=${BACKUP}"

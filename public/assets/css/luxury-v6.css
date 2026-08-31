@@ -1,3 +1,4 @@
+@import url('/assets/css/service-visuals-v61.css?v=20260822');
 /* ENKAF V6 — luxury/content art direction. Loaded after site.css. */
 :root{--v6-gold:#c6a36d;--v6-gold-soft:#dfc59f;--v6-ink:#0d1510;--v6-glass:rgba(13,22,16,.58);--v6-line:rgba(212,183,134,.26)}
 .site-header{background:linear-gradient(180deg,rgba(13,21,16,.985),rgba(18,27,21,.965));border-bottom-color:rgba(214,184,137,.14);box-shadow:0 12px 34px rgba(4,8,6,.18)}.site-header::after{content:"";position:absolute;right:0;left:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(211,191,166,.38),transparent);pointer-events:none}.header-cta{background:linear-gradient(135deg,#dcc29c,#b88955);box-shadow:0 8px 24px rgba(95,60,25,.22)}.header-phone{background:rgba(255,255,255,.025)}
