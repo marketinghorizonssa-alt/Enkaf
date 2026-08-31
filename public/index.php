@@ -8,16 +8,16 @@ require_once dirname(__DIR__) . '/app/views.php';
 require_once dirname(__DIR__) . '/app/enhancements.php';
 
 function performance_ready_html(string $html, string $path): string {
-    // Keep the complete V6 visual system, but deliver it as one CSS request.
-    // This removes the render-blocking chain created by site.css + enhancements.css + luxury-v6.css.
+    // Keep the complete V6 visual system, content enhancements and V6.9 brand typography
+    // in one stable CSS request so no later layer can be silently omitted.
     $cleaned = preg_replace(
-        '#<link[^>]+href="/assets/css/(?:site|enhancements|luxury-v6)\.css(?:\?[^\"]*)?"[^>]*>#',
+        '#<link[^>]+href="/assets/css/(?:site|enhancements|luxury-v6|brand-fonts-v69)\.css(?:\?[^\"]*)?"[^>]*>#',
         '',
         $html
     );
     if (is_string($cleaned)) $html = $cleaned;
-    $bundle = '<link rel="preload" href="/assets/css/enkaf-bundle.css?v=20260829-3" as="style">'
-        . '<link rel="stylesheet" data-enkaf-v6="1" href="/assets/css/enkaf-bundle.css?v=20260829-3">';
+    $bundle = '<link rel="preload" href="/assets/css/enkaf-bundle.css?v=20260831-1" as="style">'
+        . '<link rel="stylesheet" data-enkaf-v6="1" href="/assets/css/enkaf-bundle.css?v=20260831-1">';
     if (!str_contains($html, '/assets/css/enkaf-bundle.css')) {
         $html = str_replace('</head>', $bundle . '</head>', $html);
     }
@@ -91,7 +91,7 @@ $cfg = site_config();
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://www.googletagmanager.com 'unsafe-inline'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com; frame-src https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self' https://db.onlinewebfonts.com data:; script-src 'self' https://www.googletagmanager.com 'unsafe-inline'; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com; frame-src https://www.googletagmanager.com; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
 if ($cfg['review_mode']) header('X-Robots-Tag: noindex, nofollow');
 
 $rawPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
@@ -106,7 +106,7 @@ if ($path === '/healthz/') {
     echo json_encode([
         'ok' => true,
         'service' => 'enkaf-landing-site',
-        'build' => BUILD_ID . '-v5-legal-about-seo-perf-direct-ads',
+        'build' => BUILD_ID . '-v5-legal-about-seo-perf-direct-ads-brand-v69',
         'design' => 'legal-conversion-v6',
         'review_mode' => $cfg['review_mode'],
         'gtm_configured' => $cfg['gtm_id'] !== '',
@@ -139,7 +139,7 @@ if ($path === '/sitemap.xml/') {
     echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
     foreach ($urls as $u) {
-        echo '  <url><loc>' . htmlspecialchars(absolute_url($u), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><lastmod>2026-08-29</lastmod></url>' . "\n";
+        echo '  <url><loc>' . htmlspecialchars(absolute_url($u), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><lastmod>2026-08-31</lastmod></url>' . "\n";
     }
     echo '</urlset>';
     exit;
