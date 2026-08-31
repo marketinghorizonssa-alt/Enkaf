@@ -49,6 +49,15 @@ css_bundle_ok() {
     && grep -Fq 'ENKAF-V6.9-BRAND-FONTS' "$bundle"
 }
 
+app_runtime_ok() {
+  local root="$1"
+  [ -s "$root/enhancements.php" ] \
+    && grep -Fq 'function authority_context' "$root/enhancements.php" \
+    && grep -Fq 'وزارة التجارة' "$root/enhancements.php" \
+    && grep -Fq 'الهيئة السعودية للملكية الفكرية' "$root/enhancements.php" \
+    && grep -Fq 'function about_page_html' "$root/enhancements.php"
+}
+
 build_css_bundle() {
   local root="$1"
   local bundle="$root/assets/css/enkaf-bundle.css"
@@ -84,11 +93,11 @@ if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
 fi
 
 if [ -f "$DOMAIN_ROOT/.enkaf-release" ] && [ "$(tr -d '\r\n' < "$DOMAIN_ROOT/.enkaf-release")" = "$COMMIT" ]; then
-  if assets_ok "$PUBLIC_ROOT" && css_bundle_ok "$PUBLIC_ROOT"; then
-    echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT} assets=ok css_bundle=complete"
+  if assets_ok "$PUBLIC_ROOT" && css_bundle_ok "$PUBLIC_ROOT" && app_runtime_ok "$APP_ROOT"; then
+    echo "ENKAF_DEPLOY_ALREADY_OK commit=${COMMIT} assets=ok css_bundle=complete app_runtime=complete"
     exit 0
   fi
-  echo "ENKAF_DEPLOY_REPAIR commit=${COMMIT} reason=incomplete_runtime_bundle"
+  echo "ENKAF_DEPLOY_REPAIR commit=${COMMIT} reason=incomplete_runtime"
 fi
 
 cleanup() {
@@ -112,6 +121,10 @@ if ! assets_ok "$SRC/public"; then
 fi
 if ! css_sources_ok "$SRC/public"; then
   echo "ENKAF_DEPLOY_ERROR source_css_missing"
+  exit 3
+fi
+if ! app_runtime_ok "$SRC/app"; then
+  echo "ENKAF_DEPLOY_ERROR source_app_enhancements_missing"
   exit 3
 fi
 
@@ -169,6 +182,11 @@ if ! css_sources_ok "$PUBLIC_ROOT" || ! build_css_bundle "$PUBLIC_ROOT"; then
   rollback
   exit 4
 fi
+if ! app_runtime_ok "$APP_ROOT"; then
+  echo "ENKAF_DEPLOY_ERROR deployed_app_enhancements_missing"
+  rollback
+  exit 4
+fi
 
 cat >> "$PUBLIC_ROOT/.htaccess" <<EOF
 
@@ -185,10 +203,10 @@ chmod 644 "$PUBLIC_ROOT/.enkaf-release" "$PUBLIC_ROOT/enkaf-release.txt"
 
 HEALTH="$(ENKAF_SITE_URL="https://${DOMAIN}" ENKAF_REVIEW_MODE="$REVIEW_MODE" ENKAF_DATA_DIR="$PRIVATE_ROOT" REQUEST_URI='/healthz/' REQUEST_METHOD='GET' php "$PUBLIC_ROOT/index.php" 2>/dev/null || true)"
 RELEASE="$(cat "$DOMAIN_ROOT/.enkaf-release" 2>/dev/null || true)"
-if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE" | tr -d '\r\n')" != "$COMMIT" ] || ! css_bundle_ok "$PUBLIC_ROOT"; then
+if ! printf '%s' "$HEALTH" | grep -Fq '"ok":true' || [ "$(printf '%s' "$RELEASE" | tr -d '\r\n')" != "$COMMIT" ] || ! css_bundle_ok "$PUBLIC_ROOT" || ! app_runtime_ok "$APP_ROOT"; then
   echo "ENKAF_DEPLOY_ERROR local_verification_failed commit=${COMMIT}"
   rollback
   exit 4
 fi
 
-echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} assets=ok css_bundle=complete backup=${BACKUP}"
+echo "ENKAF_DEPLOY_OK commit=${COMMIT} review_mode=${REVIEW_MODE} assets=ok css_bundle=complete app_runtime=complete backup=${BACKUP}"
